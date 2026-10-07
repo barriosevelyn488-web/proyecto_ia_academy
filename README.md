@@ -9,7 +9,7 @@ CRM web para administrar prospectos de admisiones, embudo Kanban, seguimiento po
 - Fichas de contacto con origen, programa, interés, precio del trato, método esperado, próxima tarea y notas.
 - Registro de pagos parciales, pendientes o recibidos, con método, vencimiento y referencia.
 - Reportes con pastel por origen, barras de leads e inscritos por origen, conversión, embudo y tendencia mensual.
-- Botón de WhatsApp que abre el chat con un texto preparado. El usuario confirma y envía el mensaje en WhatsApp.
+- Botón de WhatsApp con variables del contacto, normalización E.164 (Guatemala por defecto) y registro de apertura en la bitácora. El usuario confirma y envía el mensaje.
 - Sincronización periódica de la hoja de Google Sheets. El Apps Script compara cambios y reenvía solo filas nuevas o editadas.
 - Exportación de contactos a CSV.
 - Autenticación Supabase. La vista sin credenciales es un modo de demostración local y no sincroniza usuarios ni dispositivos.
@@ -41,7 +41,7 @@ SHEETS_SYNC_SECRET=UN_SECRETO_LARGO_ALEATORIO
 
 ## Configurar Supabase
 
-1. Crea un proyecto y ejecuta en **SQL Editor**, en orden, `supabase/migrations/202610050001_initial_crm.sql` y `supabase/migrations/202610070001_sheet_sync_audit.sql`.
+1. Crea un proyecto y ejecuta en **SQL Editor**, en orden, `supabase/migrations/202610050001_initial_crm.sql`, `supabase/migrations/202610070001_sheet_sync_audit.sql` y `supabase/migrations/202610070002_lead_activities.sql`.
 2. En **Authentication → Users**, crea las cuentas de las personas que usarán el CRM. El acceso público no tiene formulario de registro.
 3. Copia la URL, la clave publicable (o `anon` en proyectos anteriores) y la clave `service_role` del proyecto a `.env.local`.
 4. Para actualizaciones en tiempo real entre usuarios, habilita `leads` y `payments` en la publicación `supabase_realtime` desde Database → Publications.
@@ -82,7 +82,7 @@ La conexión es inicialmente **Sheets → CRM**. Administra las etapas y el segu
 - **Ingresos cobrados:** suma de registros de pago en estado `Pagado`, agrupados por fecha de pago. El monto del trato es el valor acordado, no equivale a dinero recibido.
 - **Valor en seguimiento:** suma de precios de tratos en etapas activas, excluyendo inscritos y no interesados.
 
-Los pagos se registran manualmente en este MVP. No se conecta a bancos ni pasarelas, y el botón de WhatsApp abre un chat con texto sugerido, pero no envía mensajes en segundo plano.
+Los pagos se registran manualmente en este MVP. No se conecta a bancos ni pasarelas. La bitácora de WhatsApp confirma que se abrió el chat, no que el usuario haya enviado el mensaje.
 
 ## Estructura
 

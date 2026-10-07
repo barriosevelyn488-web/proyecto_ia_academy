@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
 import { Check, MessageCircle, Plus, Settings2, X } from "lucide-react";
-import { Lead, METHODS, Payment, PaymentMethod, Stage, STAGES, money } from "@/lib/types";
+import {
+  Lead,
+  LeadActivity,
+  METHODS,
+  Payment,
+  PaymentMethod,
+  Stage,
+  STAGES,
+  money,
+} from "@/lib/types";
 import { formatDate } from "@/lib/formatters";
 import { LeadAvatar } from "@/components/ui/crm-primitives";
 
@@ -192,6 +201,7 @@ export function LeadFields({
 export function LeadDetail({
   lead,
   payments,
+  activities,
   onClose,
   onSave,
   onMove,
@@ -201,6 +211,7 @@ export function LeadDetail({
 }: {
   lead: Lead;
   payments: Payment[];
+  activities: LeadActivity[];
   onClose: () => void;
   onSave: (lead: Lead) => void;
   onMove: (stage: Stage) => void;
@@ -320,6 +331,23 @@ export function LeadDetail({
               <div className="note-card">
                 {lead.notes ||
                   "Todavía no hay notas. Edita la ficha para agregar información importante."}
+              </div>
+              <div className="section-label">Actividad reciente</div>
+              <div className="payment-list">
+                {activities.slice(0, 8).map((activity) => (
+                  <div className="payment-row" key={activity.id}>
+                    <span>{activity.description}</span>
+                    <time dateTime={activity.created_at}>
+                      {new Date(activity.created_at).toLocaleString("es-GT", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </time>
+                  </div>
+                ))}
+                {!activities.length && (
+                  <div className="empty-state">Todavía no hay actividad registrada.</div>
+                )}
               </div>
               <div className="section-label section-split">
                 <span>Pagos registrados</span>

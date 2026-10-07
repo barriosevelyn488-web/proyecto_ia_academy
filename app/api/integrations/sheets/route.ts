@@ -26,8 +26,11 @@ type SheetLead = {
 const text = (value: unknown) => String(value ?? "").trim();
 const normalizePhone = (value: unknown) => {
   const raw = text(value);
-  const digits = raw.replace(/\D/g, "");
-  return digits ? `+${digits}` : "";
+  let digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.length === 8) digits = `502${digits}`;
+  if (digits.length === 9 && digits.startsWith("0")) digits = `502${digits.slice(1)}`;
+  return /^[1-9]\d{7,14}$/.test(digits) ? `+${digits}` : "";
 };
 const stageValue = (value: unknown) => {
   const raw = text(value)

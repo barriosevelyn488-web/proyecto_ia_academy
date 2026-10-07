@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { Lead, Payment, Stage, STAGES, money, stageLabel } from "@/lib/types";
 import { formatDate, isLate, numberPhone, today } from "@/lib/formatters";
+import { DEFAULT_WHATSAPP_TEMPLATE, interpolateWhatsAppTemplate } from "@/lib/whatsapp";
 import { AppBrand, LeadAvatar, Login, Metric } from "@/components/ui/crm-primitives";
 import { FilterRow, LeadTable } from "@/features/leads/components/lead-table";
 import { LeadDetail, LeadForm } from "@/features/leads/components/lead-forms";
@@ -80,6 +81,7 @@ export default function Home() {
   const {
     leads,
     payments,
+    activities,
     sessionReady,
     signedIn,
     loginBusy,
@@ -90,6 +92,7 @@ export default function Home() {
     login,
     logout,
     addPayment,
+    logLeadActivity,
   } = crm;
 
   const saveLead = async (draft: Lead, previous?: Lead) => {
@@ -295,13 +298,26 @@ export default function Home() {
   const openWhatsApp = (lead: Lead) => {
     const phone = numberPhone(lead.phone);
     if (!phone) {
-      tell("Agrega un teléfono válido al contacto.");
+      tell(
+        "Agrega un teléfono válido con código de país o un número local de Guatemala.",
+      );
       return;
     }
-    const text = encodeURIComponent(
-      `Hola ${lead.full_name.split(" ")[0]}, te contacto de Campuslands Guatemala para dar seguimiento a tu interés en ${lead.product || "nuestros programas"}.`,
-    );
-    window.open(`https://wa.me/${phone}?text=${text}`, "_blank", "noopener,noreferrer");
+    const message = interpolateWhatsAppTemplate(DEFAULT_WHATSAPP_TEMPLATE, lead);
+    const chatUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    const chat = window.open(chatUrl, "_blank");
+    if (!chat) {
+      tell("Permite las ventanas emergentes para abrir WhatsApp.");
+      return;
+    }
+    chat.opener = null;
+    void logLeadActivity({
+      lead_id: lead.id,
+      activity_type: "whatsapp_opened",
+      description: "Chat abierto en WhatsApp; el envío queda pendiente de confirmación.",
+      metadata: { phone: `+${phone}`, message },
+    });
+    tell("Se abrió WhatsApp. Confirma el envío desde el chat.");
   };
 
   return (
@@ -634,6 +650,9 @@ export default function Home() {
         <LeadDetail
           lead={selectedLead}
           payments={payments.filter((payment) => payment.lead_id === selectedLead.id)}
+          activities={activities.filter(
+            (activity) => activity.lead_id === selectedLead.id,
+          )}
           onClose={() => setSelectedLead(null)}
           onSave={(next) => void saveLead(next, selectedLead)}
           onMove={(stage) => void moveLead(selectedLead, stage)}
