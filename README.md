@@ -41,7 +41,7 @@ SHEETS_SYNC_SECRET=UN_SECRETO_LARGO_ALEATORIO
 
 ## Configurar Supabase
 
-1. Crea un proyecto y ejecuta `supabase/migrations/202610050001_initial_crm.sql` en **SQL Editor**.
+1. Crea un proyecto y ejecuta en **SQL Editor**, en orden, `supabase/migrations/202610050001_initial_crm.sql` y `supabase/migrations/202610070001_sheet_sync_audit.sql`.
 2. En **Authentication → Users**, crea las cuentas de las personas que usarán el CRM. El acceso público no tiene formulario de registro.
 3. Copia la URL, la clave publicable (o `anon` en proyectos anteriores) y la clave `service_role` del proyecto a `.env.local`.
 4. Para actualizaciones en tiempo real entre usuarios, habilita `leads` y `payments` en la publicación `supabase_realtime` desde Database → Publications.
@@ -60,7 +60,7 @@ GitHub Pages no puede ejecutar el endpoint seguro de sincronización ni proteger
 
 ## Conectar Google Sheets
 
-El Apps Script está en `integrations/google-sheets/Code.gs`. Está configurado para leer **Marketing IA** y **De 0 a Agentes**: carga el histórico de la pestaña principal y también la pestaña usada en el ejemplo de leads nuevos. Si el bot escribe en otra, ajusta `tabNames` antes de instalarlo. El script crea una pestaña oculta `__CRM_SYNC_STATE` para guardar huellas de sincronización; no la borres mientras el activador esté activo.
+El Apps Script está en `integrations/google-sheets/Code.gs`. Está configurado para leer **Marketing IA** y **De 0 a Agentes**. Usa el nombre normalizado de los encabezados, no su posición; si la hoja cambia los títulos, ajusta los alias explícitos de `CRM_CONFIG.columnMap`. El script crea pestañas ocultas `__CRM_SYNC_STATE` (checkpoints) y `__CRM_SYNC_ERRORS` (errores y conflictos). No las borres mientras el activador esté activo.
 
 1. Despliega la aplicación en Vercel y copia su dominio.
 2. Abre el Google Sheet → **Extensiones → Apps Script**. Copia allí el contenido de `Code.gs`.
@@ -69,7 +69,9 @@ El Apps Script está en `integrations/google-sheets/Code.gs`. Está configurado 
 5. Ejecuta `syncLeadsToCrm` una vez y concede los permisos solicitados.
 6. Ejecuta `createFiveMinuteTrigger` una vez para activar la sincronización cada cinco minutos.
 
-El primer recorrido envía todos los registros no vacíos de ambas pestañas, en lotes. Conserva la fecha de entrada de la hoja para que los reportes históricos queden en el periodo correcto. Los recorridos posteriores envían filas nuevas o editadas. La clave de sincronización combina teléfono y producto para actualizar el registro existente en vez de duplicarlo. Si el bot manda teléfonos como números, el endpoint los normaliza a formato internacional para abrir WhatsApp.
+El primer recorrido envía todos los registros no vacíos de ambas pestañas, en lotes. Conserva la fecha de entrada de la hoja para que los reportes históricos queden en el periodo correcto. La clave de cruce actual es teléfono normalizado + producto (`source_key`). Los recorridos posteriores envían filas nuevas o editadas. Si el lead ya existe, **CRM es la fuente de verdad**: no se sobrescriben sus campos editados desde la app; el cambio de Sheets se registra como conflicto en `sync_logs` y `__CRM_SYNC_ERRORS` para revisión. Así se evita una política de “última escritura” incorrecta, ya que Sheets no aporta un `updated_at` fiable por fila.
+
+La sincronización usa lotes, bloqueo para evitar ejecuciones simultáneas, reintentos con espera incremental y un límite de tiempo inferior al máximo de Apps Script. Solo marca como procesada una fila cuando el servidor devuelve resultado; los errores quedan pendientes para el siguiente recorrido. El endpoint evita duplicados con `source_key`. Si el bot envía teléfonos como números, los normaliza para el enlace de WhatsApp.
 
 La conexión es inicialmente **Sheets → CRM**. Administra las etapas y el seguimiento en la app. Si se modifica una fila en Sheets, se vuelve a enviar su estado y notas; evita editar el mismo campo en ambos sitios. Apps Script corre en la cuenta de quien instaló el activador y seguirá sincronizando mientras esa cuenta conserve acceso al documento.
 
