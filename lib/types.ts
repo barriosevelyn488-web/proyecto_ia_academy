@@ -34,6 +34,16 @@ export type Payment = {
   created_at: string;
 };
 
+export type LeadActivity = {
+  id: string;
+  lead_id: string;
+  activity_type: "whatsapp_opened" | "note" | "task";
+  description: string;
+  metadata: Record<string, string>;
+  created_by: string | null;
+  created_at: string;
+};
+
 export const STAGES: { id: Stage; label: string; color: string }[] = [
   { id: "nuevo", label: "Nuevo lead", color: "#4d6cf5" },
   { id: "interesado", label: "Interesado", color: "#9a6cf5" },

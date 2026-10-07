@@ -9,7 +9,16 @@ export const initials = (name: string) =>
     .join("")
     .toUpperCase() || "CL";
 
-export const numberPhone = (phone: string) => phone.replace(/\D/g, "");
+export const phoneE164 = (phone: string, defaultCountryCode = "502") => {
+  let digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.length === 8) digits = `${defaultCountryCode}${digits}`;
+  if (digits.length === 9 && digits.startsWith("0"))
+    digits = `${defaultCountryCode}${digits.slice(1)}`;
+  return /^[1-9]\d{7,14}$/.test(digits) ? `+${digits}` : "";
+};
+
+export const numberPhone = (phone: string) => phoneE164(phone).replace("+", "");
 
 export const sourceKeyFor = (phone: string, product: string) =>
   `${numberPhone(phone)}:${product

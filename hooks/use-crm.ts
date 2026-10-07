@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { demoLeads, demoPayments } from "@/lib/demo-data";
 import { hasCloud, supabase } from "@/lib/supabase/browser";
-import { Lead, Payment, Stage } from "@/lib/types";
+import { Lead, LeadActivity, Payment, Stage } from "@/lib/types";
 import { sourceKeyFor } from "@/lib/formatters";
 
 type Notify = (message: string) => void;
 type NewPayment = Omit<Payment, "id" | "created_at">;
+type NewActivity = Omit<LeadActivity, "id" | "created_at" | "created_by">;
 
 function readLocal<T>(key: string, fallback: T): T {
   try {
@@ -19,6 +20,7 @@ function readLocal<T>(key: string, fallback: T): T {
 export function useCrm(notify: Notify) {
   const [leads, setLeads] = useState<Lead[]>(demoLeads);
   const [payments, setPayments] = useState<Payment[]>(demoPayments);
+  const [activities, setActivities] = useState<LeadActivity[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [sessionReady, setSessionReady] = useState(!hasCloud);
   const [signedIn, setSignedIn] = useState(!hasCloud);
@@ -34,12 +36,18 @@ export function useCrm(notify: Notify) {
     const [
       { data: leadRows, error: leadError },
       { data: paymentRows, error: paymentError },
+      { data: activityRows, error: activityError },
     ] = await Promise.all([
       supabase.from("leads").select("*").order("created_at", { ascending: false }),
       supabase.from("payments").select("*").order("created_at", { ascending: false }),
+      supabase
+        .from("lead_activities")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(500),
     ]);
 
-    if (leadError || paymentError) {
+    if (leadError || paymentError || activityError) {
       notify("No se pudieron cargar los datos. Revisa la configuración de Supabase.");
     }
     if (leadRows) {
@@ -61,6 +69,7 @@ export function useCrm(notify: Notify) {
         })) as Payment[],
       );
     }
+    if (activityRows) setActivities(activityRows as LeadActivity[]);
 
     setLoaded(true);
     setBusy(false);
@@ -70,6 +79,7 @@ export function useCrm(notify: Notify) {
     if (!hasCloud) {
       setLeads(readLocal("campuslands-crm-leads", demoLeads));
       setPayments(readLocal("campuslands-crm-payments", demoPayments));
+      setActivities(readLocal("campuslands-crm-activities", []));
       setLoaded(true);
       return;
     }
@@ -113,6 +123,11 @@ export function useCrm(notify: Notify) {
         { event: "*", schema: "public", table: "payments" },
         () => void loadCloudData(),
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "lead_activities" },
+        () => void loadCloudData(),
+      )
       .subscribe();
 
     return () => void supabase?.removeChannel(channel);
@@ -122,7 +137,8 @@ export function useCrm(notify: Notify) {
     if (!loaded || hasCloud) return;
     localStorage.setItem("campuslands-crm-leads", JSON.stringify(leads));
     localStorage.setItem("campuslands-crm-payments", JSON.stringify(payments));
-  }, [leads, loaded, payments]);
+    localStorage.setItem("campuslands-crm-activities", JSON.stringify(activities));
+  }, [activities, leads, loaded, payments]);
 
   const login = async (email: string, password: string) => {
     if (!supabase) return;
@@ -246,9 +262,32 @@ export function useCrm(notify: Notify) {
     notify("Pago registrado.");
   };
 
+  const logLeadActivity = async (activity: NewActivity) => {
+    if (supabase) {
+      const { error } = await supabase.from("lead_activities").insert(activity);
+      if (error) {
+        notify("No se pudo guardar la actividad del contacto.");
+        return false;
+      }
+      await loadCloudData();
+      return true;
+    }
+    setActivities((current) => [
+      {
+        ...activity,
+        id: crypto.randomUUID(),
+        created_by: null,
+        created_at: new Date().toISOString(),
+      },
+      ...current,
+    ]);
+    return true;
+  };
+
   return {
     leads,
     payments,
+    activities,
     loaded,
     sessionReady,
     signedIn,
@@ -262,5 +301,6 @@ export function useCrm(notify: Notify) {
     saveLead,
     moveLead,
     addPayment,
+    logLeadActivity,
   };
 }
