@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Check, MessageCircle, Plus, Settings2, Sparkles, X } from "lucide-react";
-import { CAMPUSLANDS_PROGRAMS } from "@/lib/sales-playbook";
+import { CAMPUSLANDS_PROGRAMS, getStageSalesGuide } from "@/lib/sales-playbook";
 import {
   Lead,
   LeadActivity,
@@ -214,6 +214,7 @@ export function LeadDetail({
   onMove,
   onWhatsApp,
   onOpenSalesAssistant,
+  onLogNote,
   onAddPayment,
   tell,
 }: {
@@ -223,14 +224,17 @@ export function LeadDetail({
   onClose: () => void;
   onSave: (lead: Lead) => void;
   onMove: (stage: Stage) => void;
-  onWhatsApp: () => void;
+  onWhatsApp: (customMessage?: string) => void;
   onOpenSalesAssistant?: () => void;
+  onLogNote?: (description: string) => Promise<boolean>;
   onAddPayment: (payment: Omit<Payment, "id" | "created_at">) => Promise<void>;
   tell: (message: string) => void;
 }) {
   const [draft, setDraft] = useState(lead);
   const [editing, setEditing] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [quickNote, setQuickNote] = useState("");
+  const [noteBusy, setNoteBusy] = useState(false);
   useEffect(() => {
     setDraft(lead);
   }, [lead]);
@@ -239,6 +243,8 @@ export function LeadDetail({
   const received = payments
     .filter((payment) => payment.status === "pagado")
     .reduce((sum, payment) => sum + Number(payment.amount), 0);
+  const stageGuide = getStageSalesGuide(lead);
+  const stageScript = stageGuide.getScript(lead);
   return (
     <div
       className="modal-backdrop"
@@ -259,7 +265,10 @@ export function LeadDetail({
                 </div>
               </div>
               <div className="detail-actions">
-                <button className="button small whatsapp-action" onClick={onWhatsApp}>
+                <button
+                  className="button small whatsapp-action"
+                  onClick={() => onWhatsApp()}
+                >
                   <MessageCircle size={13} /> WhatsApp
                 </button>
                 {onOpenSalesAssistant && (
@@ -341,12 +350,78 @@ export function LeadDetail({
                   <div className="detail-stat-value">{formatDate(lead.created_at)}</div>
                 </div>
               </div>
+              <div className="section-label">Guía rápida para esta fase</div>
+              <div
+                style={{
+                  border: "1px solid var(--border)",
+                  borderRadius: 10,
+                  padding: 12,
+                  background: "var(--bg)",
+                  display: "grid",
+                  gap: 6,
+                  fontSize: 12,
+                }}
+              >
+                <div style={{ fontWeight: 600, color: "var(--ink)" }}>{stageGuide.title}</div>
+                <div style={{ color: "var(--muted)" }}>
+                  <strong>Objetivo:</strong> {stageGuide.goal}
+                </div>
+                <div style={{ color: "var(--muted)" }}>
+                  <strong>Siguiente paso:</strong> {stageGuide.nextStep}
+                </div>
+                <div
+                  style={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
+                    padding: 8,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {stageScript}
+                </div>
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                  <button
+                    type="button"
+                    className="button small primary"
+                    onClick={() => onWhatsApp(stageScript)}
+                  >
+                    <MessageCircle size={12} /> Enviar guion por WhatsApp
+                  </button>
+                </div>
+              </div>
               <div className="section-label">Notas de seguimiento</div>
               <div className="note-card">
                 {lead.notes ||
                   "Todavía no hay notas. Edita la ficha para agregar información importante."}
               </div>
               <div className="section-label">Actividad reciente</div>
+              {onLogNote && (
+                <form
+                  style={{ display: "flex", gap: 8, marginBottom: 8 }}
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!quickNote.trim()) return;
+                    setNoteBusy(true);
+                    const ok = await onLogNote(quickNote.trim());
+                    setNoteBusy(false);
+                    if (ok) {
+                      setQuickNote("");
+                      tell("Seguimiento registrado en la bitácora.");
+                    }
+                  }}
+                >
+                  <input
+                    className="field"
+                    placeholder="Registrar llamada, respuesta o acuerdo rápido…"
+                    value={quickNote}
+                    onChange={(e) => setQuickNote(e.target.value)}
+                  />
+                  <button className="button small" disabled={noteBusy || !quickNote.trim()}>
+                    <Plus size={12} /> Registrar
+                  </button>
+                </form>
+              )}
               <div className="payment-list">
                 {activities.slice(0, 8).map((activity) => (
                   <div className="payment-row" key={activity.id}>

@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+import { Printer } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -52,8 +54,62 @@ export function ReportsPanel({
   onOrigin: (origin: string) => void;
 }) {
   const paid = payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+
+  const programStats = useMemo(() => {
+    const map = new Map<
+      string,
+      { program: string; leads: number; enrolled: number; lost: number; revenue: number }
+    >();
+    for (const lead of leads) {
+      const key = lead.product.trim() || "Sin programa";
+      const cur = map.get(key) ?? {
+        program: key,
+        leads: 0,
+        enrolled: 0,
+        lost: 0,
+        revenue: 0,
+      };
+      cur.leads += 1;
+      if (lead.stage === "inscrito") {
+        cur.enrolled += 1;
+        cur.revenue += Number(lead.deal_amount || 0);
+      } else if (lead.stage === "perdido") {
+        cur.lost += 1;
+      }
+      map.set(key, cur);
+    }
+    return Array.from(map.values())
+      .map((item) => ({
+        ...item,
+        conversion: item.leads ? Math.round((item.enrolled / item.leads) * 100) : 0,
+      }))
+      .sort((a, b) => b.leads - a.leads);
+  }, [leads]);
+
+  const recentCount = useMemo(() => {
+    const cutoff = Date.now() - 7 * 86400000;
+    return leads.filter((l) => new Date(l.created_at).getTime() >= cutoff).length;
+  }, [leads]);
+  const lostCount = useMemo(
+    () => leads.filter((l) => l.stage === "perdido").length,
+    [leads],
+  );
+
   return (
     <>
+      <div
+        className="toolbar"
+        style={{ marginBottom: 12, display: "flex", justifyContent: "space-between", gap: 8 }}
+      >
+        <div style={{ fontSize: 12, color: "var(--muted)" }}>
+          Recientes (7 días): <strong style={{ color: "var(--ink)" }}>{recentCount}</strong>{" "}
+          · Perdidos (recuperables):{" "}
+          <strong style={{ color: "var(--ink)" }}>{lostCount}</strong>
+        </div>
+        <button type="button" className="button small" onClick={() => window.print()}>
+          <Printer size={13} /> Imprimir / Guardar PDF
+        </button>
+      </div>
       <div className="report-grid">
         <section className="panel report-card">
           <SectionTitle
@@ -267,6 +323,53 @@ export function ReportsPanel({
                 <tr>
                   <td colSpan={6} className="empty-state">
                     Sin datos para el periodo seleccionado.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section className="panel report-table" style={{ marginTop: 16 }}>
+        <SectionTitle
+          title="Rendimiento por programa (Code-Up y Talleres IA)"
+          subtitle="Leads captados, inscritos, perdidos y conversión por programa"
+        />
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Programa</th>
+                <th>Leads</th>
+                <th>Inscritos</th>
+                <th>Perdidos</th>
+                <th>Conversión</th>
+                <th>Valor inscrito</th>
+              </tr>
+            </thead>
+            <tbody>
+              {programStats.map((row) => (
+                <tr key={row.program}>
+                  <td>
+                    <strong style={{ color: "var(--ink)" }}>{row.program}</strong>
+                  </td>
+                  <td>{row.leads}</td>
+                  <td>{row.enrolled}</td>
+                  <td>{row.lost}</td>
+                  <td>
+                    <span
+                      className={`badge ${row.conversion >= 25 ? "green" : row.conversion ? "amber" : "gray"}`}
+                    >
+                      {row.conversion}%
+                    </span>
+                  </td>
+                  <td className="deal-total">{money(row.revenue)}</td>
+                </tr>
+              ))}
+              {!programStats.length && (
+                <tr>
+                  <td colSpan={6} className="empty-state">
+                    Sin datos de programas en el periodo.
                   </td>
                 </tr>
               )}

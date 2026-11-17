@@ -99,6 +99,9 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [originFilter, setOriginFilter] = useState("todos");
   const [stageFilter, setStageFilter] = useState("todos");
+  const [segmentFilter, setSegmentFilter] = useState<
+    "todos" | "recientes" | "vencidos" | "perdidos"
+  >("todos");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [newModal, setNewModal] = useState(false);
   const [salesToolkitOpen, setSalesToolkitOpen] = useState(false);
@@ -196,23 +199,32 @@ export default function Home() {
     () => Array.from(new Set(leads.map((lead) => lead.origin).filter(Boolean))).sort(),
     [leads],
   );
-  const filteredLeads = useMemo(
-    () =>
-      leads.filter((lead) => {
-        const term = search.trim().toLowerCase();
-        const matchesTerm =
-          !term ||
-          [lead.full_name, lead.phone, lead.email, lead.product, lead.origin].some(
-            (part) => part?.toLowerCase().includes(term),
-          );
-        return (
-          matchesTerm &&
-          (originFilter === "todos" || lead.origin === originFilter) &&
-          (stageFilter === "todos" || lead.stage === stageFilter)
+  const filteredLeads = useMemo(() => {
+    const sevenDaysAgo = Date.now() - 7 * 86400000;
+    return leads.filter((lead) => {
+      const term = search.trim().toLowerCase();
+      const matchesTerm =
+        !term ||
+        [lead.full_name, lead.phone, lead.email, lead.product, lead.origin].some(
+          (part) => part?.toLowerCase().includes(term),
         );
-      }),
-    [leads, search, originFilter, stageFilter],
-  );
+      const matchesSegment =
+        segmentFilter === "todos" ||
+        (segmentFilter === "recientes" &&
+          new Date(lead.created_at).getTime() >= sevenDaysAgo) ||
+        (segmentFilter === "vencidos" &&
+          Boolean(lead.next_contact_at) &&
+          isLate(lead.next_contact_at) &&
+          !["inscrito", "perdido"].includes(lead.stage)) ||
+        (segmentFilter === "perdidos" && lead.stage === "perdido");
+      return (
+        matchesTerm &&
+        matchesSegment &&
+        (originFilter === "todos" || lead.origin === originFilter) &&
+        (stageFilter === "todos" || lead.stage === stageFilter)
+      );
+    });
+  }, [leads, search, originFilter, stageFilter, segmentFilter]);
 
   const originData = useMemo(() => {
     const map = new Map<
@@ -638,19 +650,39 @@ export default function Home() {
           {view === "leads" && (
             <>
               <div className="toolbar">
-                <div className="toolbar-left">
+                <div className="toolbar-left" style={{ flexWrap: "wrap", gap: 6 }}>
                   <span className="count-label">
                     <strong style={{ color: "var(--ink)" }}>
                       {filteredLeads.length}
                     </strong>{" "}
                     contactos
                   </span>
-                  {(originFilter !== "todos" || stageFilter !== "todos") && (
+                  {(
+                    [
+                      { id: "todos", label: "Todos" },
+                      { id: "recientes", label: "Recientes (7d)" },
+                      { id: "vencidos", label: "Vencidos hoy" },
+                      { id: "perdidos", label: "Perdidos (recuperar)" },
+                    ] as const
+                  ).map((seg) => (
+                    <button
+                      key={seg.id}
+                      type="button"
+                      className={`button small ${segmentFilter === seg.id ? "primary" : ""}`}
+                      onClick={() => setSegmentFilter(seg.id)}
+                    >
+                      {seg.label}
+                    </button>
+                  ))}
+                  {(originFilter !== "todos" ||
+                    stageFilter !== "todos" ||
+                    segmentFilter !== "todos") && (
                     <button
                       className="button small"
                       onClick={() => {
                         setOriginFilter("todos");
                         setStageFilter("todos");
+                        setSegmentFilter("todos");
                       }}
                     >
                       Limpiar filtros <X size={12} />
@@ -727,11 +759,19 @@ export default function Home() {
           onClose={() => setSelectedLead(null)}
           onSave={(next) => void saveLead(next, selectedLead)}
           onMove={(stage) => void moveLead(selectedLead, stage)}
-          onWhatsApp={() => openWhatsApp(selectedLead)}
+          onWhatsApp={(customMessage) => openWhatsApp(selectedLead, customMessage)}
           onOpenSalesAssistant={() => {
             setSalesToolkitLead(selectedLead);
             setSalesToolkitOpen(true);
           }}
+          onLogNote={(description) =>
+            logLeadActivity({
+              lead_id: selectedLead.id,
+              activity_type: "note",
+              description,
+              metadata: { stage: selectedLead.stage },
+            })
+          }
           onAddPayment={addPayment}
           tell={tell}
         />

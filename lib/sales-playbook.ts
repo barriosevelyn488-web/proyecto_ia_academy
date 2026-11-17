@@ -13,56 +13,51 @@ export type ProgramCatalogItem = {
 
 export const CAMPUSLANDS_PROGRAMS: ProgramCatalogItem[] = [
   {
-    id: "taller-ia",
-    name: "Taller de IA",
-    suggestedPrice: 2500,
-    duration: "4 semanas (práctico)",
-    modality: "En vivo / híbrido",
-    audience: "Profesionales, emprendedores y equipos que quieren productividad inmediata",
-    valueProp: "Casos reales aplicados desde la primera sesión con plantillas listas para trabajar.",
-  },
-  {
-    id: "de-0-a-agentes",
-    name: "De 0 a Agentes",
-    suggestedPrice: 2800,
-    duration: "6 semanas",
-    modality: "En vivo + proyecto guiado",
-    audience: "Quienes buscan automatizar procesos y crear agentes de IA sin complicarse",
-    valueProp: "Construyes tu propio agente funcional conectado a herramientas reales paso a paso.",
-  },
-  {
-    id: "marketing-ia",
-    name: "Marketing IA",
-    suggestedPrice: 2200,
-    duration: "4 semanas",
-    modality: "En vivo / práctico",
-    audience: "Dueños de negocio, creadores y áreas comerciales",
-    valueProp: "Sistema completo de contenido, anuncios, guiones y embudos con voz de marca.",
-  },
-  {
     id: "code-up",
     name: "Code-Up",
     suggestedPrice: 2500,
-    duration: "6 semanas",
-    modality: "Mentoría práctica",
-    audience: "Estudiantes y profesionales que quieren acelerar desarrollo de software",
-    valueProp: "Acompañamiento técnico directo y proyectos reales para portafolio.",
+    duration: "10 meses (intensivo)",
+    modality: "Programa integral",
+    audience: "Jóvenes y adultos que buscan empleo tech o reconversión profesional completa",
+    valueProp:
+      "Curso intensivo de 10 meses que combina Programación + Inglés + Habilidades Adaptativas.",
   },
   {
-    id: "analitica-datos",
-    name: "Analítica de datos",
-    suggestedPrice: 3000,
-    duration: "6 semanas",
-    modality: "En vivo + casos",
-    audience: "Analistas, administradores y gerencias que deciden con datos",
-    valueProp: "Limpieza, modelado y tableros accionables listos para reportar a dirección.",
+    id: "ia-01",
+    name: "Taller Práctico: IA de cero a Agentes",
+    suggestedPrice: 2800,
+    duration: "Taller práctico (IA.01)",
+    modality: "En vivo + Plataforma de talleres",
+    audience: "Profesionales y emprendedores que quieren crear agentes y subagentes reales",
+    valueProp:
+      "Aprende IA desde cero hasta crear agentes y subagentes con ChatGPT, Claude y Gemini, con acceso a plataforma (videos y diploma).",
+  },
+  {
+    id: "tmcia",
+    name: "Taller Marketing con IA",
+    suggestedPrice: 2200,
+    duration: "Taller práctico (TMCIA)",
+    modality: "En vivo + Plataforma de talleres",
+    audience: "Equipos comerciales, creadores y dueños de negocio",
+    valueProp:
+      "Construye un sistema de marketing que investiga, crea, distribuye y aprende con mayor velocidad (incluye herramientas, videos y diploma en plataforma).",
+  },
+  {
+    id: "fin-03",
+    name: "Finanzas IA",
+    suggestedPrice: 2500,
+    duration: "Taller práctico (FIN.03)",
+    modality: "En vivo + Plataforma de talleres",
+    audience: "Analistas, administradores y gerencias financieras",
+    valueProp:
+      "Lleva finanzas de la operación transaccional a una función estratégica que recomienda y decide (acceso a plataforma y diploma).",
   },
   {
     id: "corporativo",
     name: "Capacitación Corporativa",
     suggestedPrice: 6500,
     duration: "A medida (equipo)",
-    modality: "In-company / virtual",
+    modality: "In-company / virtual + Plataforma",
     audience: "Empresas y grupos de 3+ personas",
     valueProp: "Temario adaptado a los procesos del equipo con tarifa grupal preferencial.",
   },
@@ -319,10 +314,78 @@ export function buildCallScript(lead?: Lead | null): {
     questions: [
       `¿Qué te motivó a buscar ${program} en este momento?`,
       "¿Lo quieres aplicar en tu trabajo actual, en un negocio propio o para cambiar de rol?",
-      "¿Has usado antes herramientas de IA o automatización, o partes desde cero?",
+      "¿Has usado antes herramientas de IA o programación, o partes desde cero?",
       "¿Qué horario te funciona mejor para sesiones en vivo?",
       `La inversión de ${program} es de ${amount}. ¿Prefieres pago único o revisamos plan en cuotas?`,
     ],
     closing: `«Perfecto, ${name}. Entonces quedamos en [acuerdo / envío de cotización / sesión] para el [día]. Te lo confirmo por WhatsApp ahora mismo.»`,
   };
+}
+
+export type StageSalesGuide = {
+  title: string;
+  goal: string;
+  nextStep: string;
+  getScript: (lead: Lead) => string;
+};
+
+export function getStageSalesGuide(lead: Lead): StageSalesGuide {
+  const firstName = lead.full_name.trim().split(/\s+/)[0] || "hola";
+  const isCodeUp = /code[-\s]?up/i.test(lead.product);
+  const program = lead.product.trim() || "nuestros programas";
+
+  const programPitch = isCodeUp
+    ? "Code-Up es nuestro intensivo de 10 meses donde combinas programación, inglés y habilidades adaptativas para dar un salto real en tu carrera"
+    : `${program} incluye sesiones prácticas y acceso a nuestra plataforma de talleres con videos, herramientas listas y diploma`;
+
+  switch (lead.stage) {
+    case "nuevo":
+      return {
+        title: "Fase 1 · Primer contacto rápido",
+        goal: "Responder en menos de 15 min, calificar interés y confirmar si busca Code-Up (10 meses) o taller de IA.",
+        nextStep: "Enviar WhatsApp inicial y agendar fecha de próximo contacto.",
+        getScript: () =>
+          `Hola ${firstName}, gusto en saludarte de Campuslands. Vi tu interés en ${program}. ${programPitch}. ¿Lo buscas para tu trabajo actual o para dar un cambio profesional?`,
+      };
+    case "interesado":
+      return {
+        title: "Fase 2 · Presentar valor y opciones",
+        goal: "Mostrar qué incluye el programa (plataforma/diploma o ruta de 10 meses) y proponer horario o visita.",
+        nextStep: "Enviar cotización o invitar a sesión informativa / visita.",
+        getScript: () =>
+          `Hola ${firstName}, te cuento rápido: ${programPitch}. ¿Te gustaría que te comparta el temario y opciones de pago/cuotas, o agendamos una llamada de 10 min?`,
+      };
+    case "contactado":
+      return {
+        title: "Fase 3 · Seguimiento activo (destrabar dudas)",
+        goal: "Detectar qué le frena (precio, horario, nivel) y dar una respuesta honesta con siguiente paso.",
+        nextStep: "Preguntar qué necesita validar y fijar fecha límite suave.",
+        getScript: () =>
+          `Hola ${firstName}, paso a saludarte por tu consulta de ${program}. ¿Pudiste revisar los detalles o quedó alguna duda sobre horarios, plataforma o forma de pago?`,
+      };
+    case "visita":
+      return {
+        title: "Fase 4 · Cierre tras visita / demo",
+        goal: "Confirmar cupo, definir método de pago y registrar el primer abono o reserva.",
+        nextStep: "Enviar datos de pago o cotización formal y pasar a Inscrito al confirmar.",
+        getScript: () =>
+          `Hola ${firstName}, qué gusto haber conversado contigo sobre ${program}. ¿Confirmamos tu cupo para iniciar con el grupo? Si gustas te paso los datos para transferencia o tarjeta.`,
+      };
+    case "inscrito":
+      return {
+        title: "Fase 5 · Bienvenida y acceso a plataforma",
+        goal: "Asegurar acceso a plataforma de estudiantes/talleres y confirmar pagos pendientes.",
+        nextStep: "Verificar pago completo o programar recordatorio de cuota.",
+        getScript: () =>
+          `¡Bienvenido/a a Campuslands, ${firstName}! Tu lugar en ${program} está confirmado. Cualquier duda con tu acceso a la plataforma de talleres y materiales me escribes por acá.`,
+      };
+    case "perdido":
+      return {
+        title: "Recuperación de cliente perdido",
+        goal: "Retomar contacto sin presión cuando abre nueva cohorte o hay un taller más corto.",
+        nextStep: "Ofrecer alternativa (ej. taller corto en plataforma si no pudo Code-Up de 10 meses).",
+        getScript: () =>
+          `Hola ${firstName}, te saluda el equipo de Campuslands. Estamos abriendo nuevo grupo y me acordé de ti. ¿Te gustaría que te avise fechas o prefieres ver un taller corto en nuestra plataforma?`,
+      };
+  }
 }
