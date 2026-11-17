@@ -51,6 +51,7 @@ returns jsonb
 language sql
 stable
 security invoker
+set search_path = public, pg_temp
 as $$
   with scoped_leads as (
     select *
