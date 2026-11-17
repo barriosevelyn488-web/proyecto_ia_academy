@@ -18,6 +18,10 @@ export type Lead = {
   next_contact_at: string;
   notes: string;
   source_key?: string;
+  assigned_to?: string;
+  loss_reason?: string;
+  nit?: string;
+  organization_id?: string;
   created_at: string;
   updated_at: string;
 };

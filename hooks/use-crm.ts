@@ -3,10 +3,18 @@ import { demoLeads, demoPayments } from "@/lib/demo-data";
 import { hasCloud, supabase } from "@/lib/supabase/browser";
 import { Lead, LeadActivity, Payment, Stage } from "@/lib/types";
 import { numberPhone, sourceKeyFor } from "@/lib/formatters";
+import {
+  fetchCloudSnapshot,
+  insertCloudActivity,
+  insertCloudPayment,
+  persistCloudLead,
+  purgeCloudArchived,
+  updateCloudLeadStage,
+  type NewActivityInput,
+  type NewPaymentInput,
+} from "@/lib/services/crm-repository";
 
 type Notify = (message: string) => void;
-type NewPayment = Omit<Payment, "id" | "created_at">;
-type NewActivity = Omit<LeadActivity, "id" | "created_at" | "created_by">;
 
 const STORAGE_KEYS = {
   leads: "campuslands-crm-leads",
@@ -14,13 +22,6 @@ const STORAGE_KEYS = {
   activities: "campuslands-crm-activities",
   lightMode: "campuslands-crm-light-mode",
 } as const;
-
-const LEADS_SELECT =
-  "id,full_name,phone,email,origin,product,stage,interest,deal_amount,payment_method,next_contact_at,notes,source_key,created_at,updated_at";
-const PAYMENTS_SELECT =
-  "id,lead_id,amount,method,status,due_date,paid_at,reference,created_at";
-const ACTIVITIES_SELECT =
-  "id,lead_id,activity_type,description,metadata,created_by,created_at";
 
 function readLocal<T>(key: string, fallback: T): T {
   try {
@@ -95,55 +96,14 @@ export function useCrm(notify: Notify) {
       const limit = customLimit ?? rowLimit;
 
       setBusy(true);
-      const [
-        { data: leadRows, error: leadError },
-        { data: paymentRows, error: paymentError },
-        { data: activityRows, error: activityError },
-      ] = await Promise.all([
-        supabase
-          .from("leads")
-          .select(LEADS_SELECT)
-          .order("created_at", { ascending: false })
-          .limit(limit + 1),
-        supabase
-          .from("payments")
-          .select(PAYMENTS_SELECT)
-          .order("created_at", { ascending: false })
-          .limit(limit),
-        supabase
-          .from("lead_activities")
-          .select(ACTIVITIES_SELECT)
-          .order("created_at", { ascending: false })
-          .limit(lowBandwidthMode ? 120 : 300),
-      ]);
-
-      if (leadError || paymentError || activityError) {
+      const snapshot = await fetchCloudSnapshot(supabase, limit, lowBandwidthMode);
+      if (snapshot.hasError) {
         notify("No se pudieron cargar los datos. Revisa la configuración de Supabase.");
       }
-      if (leadRows) {
-        const more = leadRows.length > limit;
-        setHasMoreLeads(more);
-        const sliced = more ? leadRows.slice(0, limit) : leadRows;
-        setLeads(
-          sliced.map((row) => ({
-            ...row,
-            deal_amount: Number(row.deal_amount || 0),
-            next_contact_at: row.next_contact_at || "",
-          })) as Lead[],
-        );
-      }
-      if (paymentRows) {
-        setPayments(
-          paymentRows.map((row) => ({
-            ...row,
-            amount: Number(row.amount || 0),
-            due_date: row.due_date || "",
-            paid_at: row.paid_at || "",
-          })) as Payment[],
-        );
-      }
-      if (activityRows) setActivities(activityRows as LeadActivity[]);
-
+      setLeads(snapshot.leads);
+      setHasMoreLeads(snapshot.hasMoreLeads);
+      setPayments(snapshot.payments);
+      setActivities(snapshot.activities);
       setLoaded(true);
       setBusy(false);
     },
@@ -243,10 +203,7 @@ export function useCrm(notify: Notify) {
     if (!supabase) return;
     setLoginBusy(true);
     setLoginError("");
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) setLoginError("No se pudo iniciar sesión. Revisa tu correo y contraseña.");
     setLoginBusy(false);
   };
@@ -257,7 +214,7 @@ export function useCrm(notify: Notify) {
   };
 
   const saveLead = async (draft: Lead, previous?: Lead): Promise<Lead | null> => {
-    const record = {
+    const record: Lead = {
       ...draft,
       phone: draft.phone.trim(),
       source_key: draft.source_key || sourceKeyFor(draft.phone, draft.product),
@@ -271,110 +228,55 @@ export function useCrm(notify: Notify) {
     const existing =
       previous ??
       leads.find((lead) => sourceKeyFor(lead.phone, lead.product) === record.source_key);
+
     let saved: Lead;
-
     if (supabase) {
-      const payload = {
-        ...record,
-        next_contact_at: record.next_contact_at || null,
-      };
-      delete (payload as Partial<Lead>).id;
-      const query = existing
-        ? supabase
-            .from("leads")
-            .update(payload)
-            .eq("id", existing.id)
-            .select(LEADS_SELECT)
-            .single()
-        : supabase.from("leads").insert(payload).select(LEADS_SELECT).single();
-      const { data, error } = await query;
-
-      if (error) {
+      const cloudSaved = await persistCloudLead(supabase, record, existing);
+      if (!cloudSaved) {
         notify("No se pudo guardar. Revisa la conexión y los campos.");
         return null;
       }
-      saved = {
-        ...(data as Lead),
-        deal_amount: Number((data as Lead).deal_amount || 0),
-        next_contact_at: (data as Lead).next_contact_at || "",
-      };
-
-      if (existing && existing.stage !== saved.stage) {
-        await supabase.from("lead_events").insert({
-          lead_id: saved.id,
-          from_stage: existing.stage,
-          to_stage: saved.stage,
-        });
-      }
-      setLeads((current) =>
-        existing
-          ? current.map((item) => (item.id === saved.id ? saved : item))
-          : [saved, ...current],
-      );
+      saved = cloudSaved;
     } else {
       saved = {
         ...record,
         id: record.id || existing?.id || crypto.randomUUID(),
       };
-      setLeads((current) =>
-        existing
-          ? current.map((lead) => (lead.id === existing.id ? saved : lead))
-          : [saved, ...current],
-      );
     }
 
+    setLeads((current) =>
+      existing
+        ? current.map((lead) => (lead.id === existing.id ? saved : lead))
+        : [saved, ...current],
+    );
     notify(existing ? "Ficha actualizada." : "Lead agregado al embudo.");
     return saved;
   };
 
   const moveLead = async (lead: Lead, stage: Stage): Promise<Lead> => {
-    const updated = { ...lead, stage, updated_at: new Date().toISOString() };
     if (lead.stage === stage) return lead;
-
+    const updated = { ...lead, stage, updated_at: new Date().toISOString() };
     setLeads((current) => current.map((item) => (item.id === lead.id ? updated : item)));
+
     if (supabase) {
-      const { error } = await supabase
-        .from("leads")
-        .update({ stage, updated_at: updated.updated_at })
-        .eq("id", lead.id);
-      if (error) {
+      const ok = await updateCloudLeadStage(supabase, lead, stage, updated.updated_at);
+      if (!ok) {
         notify("No se pudo mover el lead.");
         await loadCloudData();
         return lead;
       }
-      await supabase.from("lead_events").insert({
-        lead_id: lead.id,
-        from_stage: lead.stage,
-        to_stage: stage,
-      });
     }
     return updated;
   };
 
-  const addPayment = async (payment: NewPayment) => {
+  const addPayment = async (payment: NewPaymentInput) => {
     if (supabase) {
-      const { data, error } = await supabase
-        .from("payments")
-        .insert({
-          ...payment,
-          due_date: payment.due_date || null,
-          paid_at: payment.paid_at || null,
-        })
-        .select(PAYMENTS_SELECT)
-        .single();
-      if (error) {
+      const inserted = await insertCloudPayment(supabase, payment);
+      if (!inserted) {
         notify("No se pudo guardar el pago.");
         return;
       }
-      if (data) {
-        const inserted: Payment = {
-          ...(data as Payment),
-          amount: Number((data as Payment).amount || 0),
-          due_date: (data as Payment).due_date || "",
-          paid_at: (data as Payment).paid_at || "",
-        };
-        setPayments((current) => [inserted, ...current]);
-      }
+      setPayments((current) => [inserted, ...current]);
     } else {
       const record: Payment = {
         ...payment,
@@ -386,20 +288,14 @@ export function useCrm(notify: Notify) {
     notify("Pago registrado.");
   };
 
-  const logLeadActivity = async (activity: NewActivity) => {
+  const logLeadActivity = async (activity: NewActivityInput) => {
     if (supabase) {
-      const { data, error } = await supabase
-        .from("lead_activities")
-        .insert(activity)
-        .select(ACTIVITIES_SELECT)
-        .single();
-      if (error) {
+      const inserted = await insertCloudActivity(supabase, activity);
+      if (!inserted) {
         notify("No se pudo guardar la actividad del contacto.");
         return false;
       }
-      if (data) {
-        setActivities((current) => [data as LeadActivity, ...current]);
-      }
+      setActivities((current) => [inserted, ...current]);
       return true;
     }
     setActivities((current) => [
@@ -468,22 +364,10 @@ export function useCrm(notify: Notify) {
       }
 
       if (supabase) {
-        if (targetLeadIds.length > 0) {
-          const { error } = await supabase.from("leads").delete().in("id", targetLeadIds);
-          if (error) {
-            notify("Error al purgar leads antiguos en la nube.");
-            return 0;
-          }
-        }
-        if (targetPaymentIds.length > 0) {
-          const { error } = await supabase
-            .from("payments")
-            .delete()
-            .in("id", targetPaymentIds);
-          if (error) {
-            notify("Error al purgar pagos anulados en la nube.");
-            return 0;
-          }
+        const ok = await purgeCloudArchived(supabase, targetLeadIds, targetPaymentIds);
+        if (!ok) {
+          notify("Error al purgar registros antiguos en la nube.");
+          return 0;
         }
       }
 
@@ -504,7 +388,6 @@ export function useCrm(notify: Notify) {
 
   const compactLocalCache = useCallback(() => {
     if (typeof window === "undefined") return;
-    // Trim activities in memory/local cache to last 200 entries and clean old notes whitespace
     setActivities((prev) => prev.slice(0, 200));
     setLeads((prev) =>
       prev.map((l) => ({

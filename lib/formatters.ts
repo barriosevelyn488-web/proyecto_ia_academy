@@ -1,3 +1,9 @@
+import {
+  buildSourceKey,
+  normalizePhoneE164,
+  toWhatsAppDigits,
+} from "@/lib/domain/phone";
+
 export const today = () => new Date().toISOString().slice(0, 10);
 
 export const initials = (name: string) =>
@@ -9,24 +15,12 @@ export const initials = (name: string) =>
     .join("")
     .toUpperCase() || "CL";
 
-export const phoneE164 = (phone: string, defaultCountryCode = "502") => {
-  let digits = phone.replace(/\D/g, "");
-  if (digits.startsWith("00")) digits = digits.slice(2);
-  if (digits.length === 8) digits = `${defaultCountryCode}${digits}`;
-  if (digits.length === 9 && digits.startsWith("0"))
-    digits = `${defaultCountryCode}${digits.slice(1)}`;
-  return /^[1-9]\d{7,14}$/.test(digits) ? `+${digits}` : "";
-};
+export const phoneE164 = (phone: string) => normalizePhoneE164(phone);
 
-export const numberPhone = (phone: string) => phoneE164(phone).replace("+", "");
+export const numberPhone = (phone: string) => toWhatsAppDigits(phone);
 
 export const sourceKeyFor = (phone: string, product: string) =>
-  `${numberPhone(phone)}:${product
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ")}`;
+  buildSourceKey(phone, product);
 
 export const isLate = (value: string) => Boolean(value && value < today());
 
