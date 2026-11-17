@@ -4,7 +4,7 @@
  */
 const CRM_CONFIG = {
   endpoint: "https://YOUR-VERCEL-DOMAIN.vercel.app/api/integrations/sheets",
-  tabNames: ["Marketing IA", "De 0 a Agentes"],
+  tabNames: ["Seguimiento!", "Visitas IA", "Marketing IA", "De 0 a Agentes"],
   rowsPerBatch: 100,
   maxRunMs: 4 * 60 * 1000 + 30 * 1000,
   stateTabName: "__CRM_SYNC_STATE",
@@ -17,12 +17,15 @@ const CRM_CONFIG = {
     name: ["NOMBRE", "NOMBRE 1", "NOMBRES"],
     name2: ["NOMBRE 2", "APELLIDO"],
     product: ["PRODUCTO", "PROGRAMA", "CURSO"],
-    stage: ["ESTADO", "ETAPA"],
-    interest: ["INTERES", "NIVEL DE INTERES"],
+    stage: ["ESTADO (FLUJO DE CONVERSACION)", "ESTADO (FLUJO DE C", "ESTADO", "ETAPA"],
+    interest: ["PRIORIDAD", "INTERES", "NIVEL DE INTERES"],
     origin: ["ORIGEN", "FUENTE"],
-    notes: ["OBSERVACIONES", "COMENTARIO", "NOTAS"],
+    notes: ["COMENTARIO", "OBSERVACIONES", "NOTAS"],
+    agreement: ["ACUERDO"],
+    paymentStatus: ["GESTION DE PAGO"],
+    nit: ["NIT"],
     next: ["PROXIMO CONTACTO O VISITA", "PROXIMO CONTACTO", "PROXIMA TAREA"],
-    amount: ["PRECIO", "MONTO", "PRECIO DEL TRATO"],
+    amount: ["MONTO", "PRECIO", "PRECIO DEL TRATO"],
     method: ["METODO DE PAGO", "FORMA DE PAGO"],
     email: ["CORREO", "EMAIL", "E-MAIL"],
   },
@@ -89,6 +92,14 @@ function syncLocked_(startedAt) {
       const get = (name) => (columns[name] < 0 ? "" : row[columns[name]]);
       const name = [get("name"), get("name2")].filter(Boolean).join(" ").trim();
       const product = String(get("product") ?? "").trim();
+      const extraNotes = [
+        get("agreement") ? `Acuerdo: ${String(get("agreement")).trim()}` : "",
+        get("paymentStatus") ? `Gestión de pago: ${String(get("paymentStatus")).trim()}` : "",
+        get("nit") ? `NIT: ${String(get("nit")).trim()}` : "",
+        get("interest") ? `Prioridad: ${String(get("interest")).trim()}` : "",
+      ].filter(Boolean);
+      const baseNotes = String(get("notes") ?? "").trim();
+      const combinedNotes = [baseNotes, extraNotes.join(" · ")].filter(Boolean).join("\n");
       const sourceKey = `${phone.replace(/\D/g, "")}:${normalizeHeader_(product)}`;
       const lead = {
         full_name: name,
@@ -101,7 +112,7 @@ function syncLocked_(startedAt) {
         deal_amount: Number(get("amount")) || 0,
         payment_method: String(get("method") ?? "").trim(),
         next_contact_at: dateValue_(get("next")),
-        notes: String(get("notes") ?? "").trim(),
+        notes: combinedNotes,
         created_at: dateValue_(get("date")),
         source_key: sourceKey,
         source_tab: tabName,

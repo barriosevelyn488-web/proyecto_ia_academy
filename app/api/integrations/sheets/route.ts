@@ -37,11 +37,11 @@ const stageValue = (value: unknown) => {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
-  if (/no interes|perdid|descart/.test(raw)) return "perdido";
-  if (/inscrit|confirmad|pagad/.test(raw)) return "inscrito";
+  if (/no interes|perdid|descart|no califica/.test(raw)) return "perdido";
+  if (/inscrit|confirmad|pagad|forms/.test(raw)) return "inscrito";
   if (/visita/.test(raw)) return "visita";
   if (/interesad/.test(raw)) return "interesado";
-  if (/llamo|contactad|seguimiento|llamada/.test(raw)) return "contactado";
+  if (/llamo|contactad|seguimiento|llamada|conversacion/.test(raw)) return "contactado";
   return "nuevo";
 };
 const interestValue = (value: unknown) => {
@@ -49,9 +49,9 @@ const interestValue = (value: unknown) => {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
-  if (raw.includes("no interesado") || raw.includes("bajo")) return "bajo";
-  if (raw.includes("alto") || raw.includes("interesado")) return "alto";
-  if (raw.includes("medio")) return "medio";
+  if (/no interesado|bajo|no califica|colgo/.test(raw)) return "bajo";
+  if (/alto|interesado|urgente/.test(raw)) return "alto";
+  if (/medio|seguimiento|indesciso|ocupado|no contesta/.test(raw)) return "medio";
   return "sin_clasificar";
 };
 const paymentMethodValue = (value: unknown) => {
