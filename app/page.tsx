@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { hasCloud } from "@/lib/supabase/browser";
 import { useCrm } from "@/hooks/use-crm";
 import {
@@ -21,6 +21,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Settings,
   Sparkles,
   TableProperties,
   Target,
@@ -73,6 +74,14 @@ const SheetsSyncModal = dynamic(
   () =>
     import("@/features/sheets/components/sheets-sync-modal").then(
       (m) => m.SheetsSyncModal,
+    ),
+  { ssr: false },
+);
+import type { CustomStage } from "@/features/stages/components/stage-customizer-modal";
+const StageCustomizerModal = dynamic(
+  () =>
+    import("@/features/stages/components/stage-customizer-modal").then(
+      (m) => m.StageCustomizerModal,
     ),
   { ssr: false },
 );
@@ -136,9 +145,34 @@ export default function Home() {
   const [salesToolkitOpen, setSalesToolkitOpen] = useState(false);
   const [salesToolkitLead, setSalesToolkitLead] = useState<Lead | null>(null);
   const [sheetsSyncOpen, setSheetsSyncOpen] = useState(false);
+  const [stageModalOpen, setStageModalOpen] = useState(false);
   const [storageModalOpen, setStorageModalOpen] = useState(false);
+  const [customStages, setCustomStages] = useState<CustomStage[]>(STAGES);
   const [toast, setToast] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("campuslands-crm-stages");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length >= 2) {
+          setCustomStages(parsed);
+        }
+      }
+    } catch {
+      // Ignore
+    }
+  }, []);
+
+  const handleSaveStages = (updated: CustomStage[]) => {
+    setCustomStages(updated);
+    try {
+      localStorage.setItem("campuslands-crm-stages", JSON.stringify(updated));
+    } catch {
+      // Ignore
+    }
+  };
 
   const tell = useCallback((message: string) => {
     setToast(message);
@@ -721,7 +755,7 @@ export default function Home() {
                   <span>Todos los prospectos</span>
                   <span className="stage-tab-count">{leads.length}</span>
                 </button>
-                {STAGES.map((s) => {
+                {customStages.map((s) => {
                   const count = leads.filter((l) => l.stage === s.id).length;
                   return (
                     <button
@@ -790,6 +824,15 @@ export default function Home() {
 
                 <div className="toolbar-right" style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
                   <button
+                    type="button"
+                    className="button small"
+                    onClick={() => setStageModalOpen(true)}
+                    title="Editar nombres, colores o agregar nuevas etapas a tu gusto"
+                  >
+                    <Settings size={13} /> Personalizar Etapas
+                  </button>
+
+                  <button
                     className={`button small ${showFilters ? "primary" : ""}`}
                     onClick={() => setShowFilters(!showFilters)}
                   >
@@ -826,6 +869,7 @@ export default function Home() {
                   onMove={moveLead}
                   onOpen={setSelectedLead}
                   focusedStage={stageFilter as any}
+                  stages={customStages}
                 />
               ) : (
                 <section className="panel table-panel">
@@ -913,6 +957,14 @@ export default function Home() {
         onClose={() => setSheetsSyncOpen(false)}
         leads={leads}
         onImportBatch={importLeadsBatch}
+        onNotify={tell}
+      />
+
+      <StageCustomizerModal
+        isOpen={stageModalOpen}
+        onClose={() => setStageModalOpen(false)}
+        stages={customStages}
+        onSaveStages={handleSaveStages}
         onNotify={tell}
       />
 

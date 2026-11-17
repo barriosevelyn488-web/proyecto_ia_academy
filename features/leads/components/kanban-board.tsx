@@ -10,12 +10,18 @@ type KanbanBoardProps = {
   onMove: (lead: Lead, stage: Stage) => void;
   onOpen: (lead: Lead) => void;
   focusedStage?: Stage | "todos";
+  stages?: { id: string; label: string; color: string; bg?: string }[];
 };
 
-export function KanbanBoard({ leads, onMove, onOpen, focusedStage = "todos" }: KanbanBoardProps) {
-  const visibleStages = focusedStage === "todos"
-    ? STAGES
-    : STAGES.filter((s) => s.id === focusedStage);
+export function KanbanBoard({
+  leads,
+  onMove,
+  onOpen,
+  focusedStage = "todos",
+  stages = STAGES,
+}: KanbanBoardProps) {
+  const visibleStages =
+    focusedStage === "todos" ? stages : stages.filter((s) => s.id === focusedStage);
 
   return (
     <>
@@ -38,7 +44,7 @@ export function KanbanBoard({ leads, onMove, onOpen, focusedStage = "todos" }: K
                   event.preventDefault();
                   const leadId = event.dataTransfer.getData("text/plain");
                   const lead = leads.find((item) => item.id === leadId);
-                  if (lead) onMove(lead, stage.id);
+                  if (lead) onMove(lead, stage.id as Stage);
                 }}
               >
                 <div className="column-head">
