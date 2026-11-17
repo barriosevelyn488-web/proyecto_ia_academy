@@ -1,4 +1,4 @@
-import type { Interest, PaymentMethod, Stage } from "@/lib/types";
+import type { Agreement, Interest, PaymentMethod, PaymentStatus, Priority, Stage } from "@/lib/types";
 import { buildSourceKey, normalizePhoneE164 } from "./phone";
 
 /**
@@ -13,6 +13,9 @@ export type IncomingLeadDTO = {
   product: string;
   stage: Stage;
   interest: Interest;
+  priority?: Priority | string;
+  agreement?: Agreement | string;
+  payment_status?: PaymentStatus | string;
   deal_amount: number;
   payment_method: PaymentMethod | "";
   next_contact_at: string | null;
@@ -33,6 +36,9 @@ export function sanitizeIncomingLead(input: {
   product?: unknown;
   stage: Stage;
   interest: Interest;
+  priority?: unknown;
+  agreement?: unknown;
+  payment_status?: unknown;
   deal_amount?: unknown;
   payment_method: PaymentMethod | "";
   next_contact_at: string | null;
@@ -57,6 +63,9 @@ export function sanitizeIncomingLead(input: {
     product,
     stage: input.stage,
     interest: input.interest,
+    priority: String(input.priority ?? "").trim() || "SEGUIMIENTO",
+    agreement: String(input.agreement ?? "").trim(),
+    payment_status: String(input.payment_status ?? "").trim(),
     deal_amount: Number(input.deal_amount) > 0 ? Number(input.deal_amount) : 0,
     payment_method: input.payment_method,
     next_contact_at: input.next_contact_at,

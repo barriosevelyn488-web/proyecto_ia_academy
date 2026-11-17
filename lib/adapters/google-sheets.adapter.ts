@@ -1,7 +1,10 @@
 import { sanitizeIncomingLead, type IncomingLeadDTO } from "@/lib/domain/lead-ingress";
 import {
+  mapAgreement,
   mapInterest,
   mapPaymentMethod,
+  mapPaymentStatus,
+  mapPriority,
   mapStage,
   parseIsoDate,
 } from "@/lib/domain/stage-mapper";
@@ -14,6 +17,9 @@ export type RawSheetLead = {
   product?: unknown;
   stage?: unknown;
   interest?: unknown;
+  priority?: unknown;
+  agreement?: unknown;
+  payment_status?: unknown;
   deal_amount?: unknown;
   payment_method?: unknown;
   next_contact_at?: unknown;
@@ -37,7 +43,10 @@ export function adaptSheetLead(row: RawSheetLead): IncomingLeadDTO {
     origin: row.origin || "Google Sheets",
     product: row.product,
     stage: mapStage(row.stage),
-    interest: mapInterest(row.interest),
+    interest: mapInterest(row.interest || row.priority),
+    priority: mapPriority(row.priority),
+    agreement: mapAgreement(row.agreement),
+    payment_status: mapPaymentStatus(row.payment_status),
     deal_amount: row.deal_amount,
     payment_method: mapPaymentMethod(row.payment_method),
     next_contact_at: parseIsoDate(row.next_contact_at),

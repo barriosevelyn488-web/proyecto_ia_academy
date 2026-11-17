@@ -4,6 +4,7 @@ import { hasCloud, supabase } from "@/lib/supabase/browser";
 import { Lead, LeadActivity, Payment, Stage } from "@/lib/types";
 import { numberPhone, sourceKeyFor } from "@/lib/formatters";
 import {
+  batchUpsertLeads,
   fetchCloudSnapshot,
   insertCloudActivity,
   insertCloudPayment,
@@ -433,6 +434,55 @@ export function useCrm(notify: Notify) {
     notify("Datos de demostración restaurados.");
   }, [notify]);
 
+  const importLeadsBatch = useCallback(
+    async (newLeads: Partial<Lead>[]): Promise<{ count: number }> => {
+      let count = 0;
+      if (supabase) {
+        setBusy(true);
+        const res = await batchUpsertLeads(supabase, newLeads);
+        count = res.inserted + res.updated;
+        await loadCloudData();
+        setBusy(false);
+      } else {
+        const updatedList = [...leads];
+        for (const item of newLeads) {
+          if (!item.phone) continue;
+          const key = item.source_key || `${item.phone}:${item.product || ""}`;
+          const idx = updatedList.findIndex(
+            (l) => (l.source_key || `${l.phone}:${l.product}`) === key,
+          );
+          const fullRecord: Lead = {
+            id: idx >= 0 ? updatedList[idx].id : crypto.randomUUID(),
+            full_name: item.full_name || "Sin nombre",
+            phone: item.phone,
+            email: item.email || "",
+            origin: item.origin || "BOT",
+            product: item.product || "CODE UP",
+            stage: item.stage || "nuevo",
+            interest: item.interest || "sin_clasificar",
+            priority: item.priority || "SEGUIMIENTO",
+            agreement: item.agreement || "",
+            payment_status: item.payment_status || "",
+            deal_amount: Number(item.deal_amount) || 0,
+            payment_method: item.payment_method || "",
+            next_contact_at: item.next_contact_at || "",
+            notes: item.notes || "",
+            nit: item.nit || "",
+            source_key: key,
+            created_at: item.created_at || new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          if (idx >= 0) updatedList[idx] = fullRecord;
+          else updatedList.unshift(fullRecord);
+          count++;
+        }
+        setLeads(updatedList);
+      }
+      return { count };
+    },
+    [leads, loadCloudData],
+  );
+
   return {
     leads,
     payments,
@@ -460,5 +510,6 @@ export function useCrm(notify: Notify) {
     compactLocalCache,
     exportBackupJson,
     resetDemoData,
+    importLeadsBatch,
   };
 }

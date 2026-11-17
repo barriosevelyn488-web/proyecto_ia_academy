@@ -14,7 +14,7 @@ export type ProgramCatalogItem = {
 export const CAMPUSLANDS_PROGRAMS: ProgramCatalogItem[] = [
   {
     id: "code-up",
-    name: "Code-Up",
+    name: "CODE UP",
     suggestedPrice: 2500,
     duration: "10 meses (intensivo)",
     modality: "Programa integral",
@@ -23,43 +23,44 @@ export const CAMPUSLANDS_PROGRAMS: ProgramCatalogItem[] = [
       "Curso intensivo de 10 meses que combina Programación + Inglés + Habilidades Adaptativas.",
   },
   {
-    id: "ia-01",
-    name: "Taller Práctico: IA de cero a Agentes",
-    suggestedPrice: 2800,
-    duration: "Taller práctico (IA.01)",
-    modality: "En vivo + Plataforma de talleres",
-    audience: "Profesionales y emprendedores que quieren crear agentes y subagentes reales",
-    valueProp:
-      "Aprende IA desde cero hasta crear agentes y subagentes con ChatGPT, Claude y Gemini, con acceso a plataforma (videos y diploma).",
-  },
-  {
-    id: "tmcia",
-    name: "Taller Marketing con IA",
+    id: "marketing-ia",
+    name: "MARKETING IA",
     suggestedPrice: 2200,
     duration: "Taller práctico (TMCIA)",
     modality: "En vivo + Plataforma de talleres",
     audience: "Equipos comerciales, creadores y dueños de negocio",
     valueProp:
-      "Construye un sistema de marketing que investiga, crea, distribuye y aprende con mayor velocidad (incluye herramientas, videos y diploma en plataforma).",
+      "Construye un sistema de marketing que investiga, crea, distribuye y aprende con IA (acceso a videos, plantillas y diploma).",
   },
   {
-    id: "fin-03",
-    name: "Finanzas IA",
+    id: "agentes-ia",
+    name: "AGENTES IA",
+    suggestedPrice: 2800,
+    duration: "Taller práctico (IA.01)",
+    modality: "En vivo + Plataforma de talleres",
+    audience: "Profesionales y emprendedores que quieren crear agentes y automatizaciones reales",
+    valueProp:
+      "Aprende IA desde cero hasta crear agentes y subagentes con ChatGPT, Claude y Gemini (acceso a plataforma y diploma).",
+  },
+  {
+    id: "finanzas-ia",
+    name: "FINANZAS IA",
     suggestedPrice: 2500,
     duration: "Taller práctico (FIN.03)",
     modality: "En vivo + Plataforma de talleres",
     audience: "Analistas, administradores y gerencias financieras",
     valueProp:
-      "Lleva finanzas de la operación transaccional a una función estratégica que recomienda y decide (acceso a plataforma y diploma).",
+      "Lleva finanzas de la operación transaccional a una función estratégica con IA (acceso a plataforma y diploma).",
   },
   {
-    id: "corporativo",
-    name: "Capacitación Corporativa",
-    suggestedPrice: 6500,
-    duration: "A medida (equipo)",
-    modality: "In-company / virtual + Plataforma",
-    audience: "Empresas y grupos de 3+ personas",
-    valueProp: "Temario adaptado a los procesos del equipo con tarifa grupal preferencial.",
+    id: "analisis-ia",
+    name: "ANALISIS IA",
+    suggestedPrice: 2500,
+    duration: "Taller práctico (ANL.02)",
+    modality: "En vivo + Plataforma de talleres",
+    audience: "Profesionales que toman decisiones con datos, dashboards y analítica",
+    valueProp:
+      "Domina el análisis de datos masivos y tableros inteligentes asistidos por IA.",
   },
 ];
 
@@ -81,6 +82,14 @@ export const SALES_QUICK_REPLIES: QuickReplyTemplate[] = [
       "Hola {{nombre}}, gusto en saludarte. Soy del equipo de Campuslands Guatemala. Vi tu consulta sobre {{producto}} y quería saber si lo buscas para aplicarlo en tu trabajo actual o en un proyecto propio.",
   },
   {
+    id: "en-conversacion",
+    shortcut: "/conversacion",
+    stage: "en_conversacion",
+    title: "En conversación bot/asesor",
+    body:
+      "Hola {{nombre}}, ¿cómo estás? Te escribo para resolver las dudas que quedaron pendientes sobre {{producto}}. ¿Prefieres que te llame en 5 minutos o te comparto por acá las fechas disponibles?",
+  },
+  {
     id: "seguimiento-interes",
     shortcut: "/seguimiento",
     stage: "interesado",
@@ -89,41 +98,33 @@ export const SALES_QUICK_REPLIES: QuickReplyTemplate[] = [
       "Hola {{nombre}}, te comparto que ya tenemos abiertas las fechas del próximo grupo de {{producto}} ({{precio}}). ¿Prefieres horario entre semana por la noche o fin de semana para ver cuál te queda mejor?",
   },
   {
-    id: "confirmar-visita",
-    shortcut: "/visita",
-    stage: "visita",
-    title: "Confirmar visita / sesión demo",
+    id: "ya-se-llamo",
+    shortcut: "/llamada",
+    stage: "ya_se_llamo",
+    title: "Resumen tras llamada telefónica",
     body:
-      "Hola {{nombre}}, confirmando nuestra sesión para revisar {{producto}}. Te toma unos 20 minutos y vemos ejemplos reales de lo que vas a construir. ¿Te queda bien hoy o prefieres mañana?",
+      "Hola {{nombre}}, qué gusto haber conversado contigo sobre {{producto}}. Te comparto por aquí el resumen y los datos para reservar tu cupo en la cohorte.",
   },
   {
-    id: "reactivacion",
-    shortcut: "/reactivar",
-    stage: "contactado",
-    title: "Reactivar sin presionar",
+    id: "confirmado",
+    shortcut: "/confirmado",
+    stage: "confirmado",
+    title: "Confirmar cupo y datos de facturación",
     body:
-      "Hola {{nombre}}, paso a saludarte sin compromiso. ¿Pudiste revisar tu disponibilidad para {{producto}}? Si en este momento se te complica el horario, cuéntame y te aviso cuando abra la siguiente cohorte.",
-  },
-  {
-    id: "cobro-amable",
-    shortcut: "/pago",
-    stage: "cobro",
-    title: "Recordatorio de pago / reserva",
-    body:
-      "Hola {{nombre}}, te escribo para confirmar tu cupo en {{producto}}. Puedes realizar tu transferencia o pago en cuotas como acordamos. Cuando tengas el comprobante me lo envías por acá para dejarte inscrito de una vez.",
+      "Hola {{nombre}}, ¡excelente! Tu cupo en {{producto}} ya está apartado. Por favor indícame tu NIT y nombre completo para generar tu factura electrónica.",
   },
   {
     id: "bienvenida",
     shortcut: "/bienvenida",
-    stage: "inscrito",
-    title: "Bienvenida al programa",
+    stage: "inscrito_forms",
+    title: "Bienvenida y acceso a plataforma",
     body:
-      "¡Bienvenido/a a Campuslands, {{nombre}}! Tu inscripción en {{producto}} quedó confirmada. En breve te compartimos el acceso y la guía previa para que aproveches el programa desde el día uno.",
+      "¡Bienvenido/a oficial a Campuslands, {{nombre}}! Tu inscripción en {{producto}} quedó confirmada. Ya puedes ingresar a la plataforma web de talleres y materiales.",
   },
   {
     id: "cierre-cortes",
     shortcut: "/cierre",
-    stage: "perdido",
+    stage: "no_interesado",
     title: "Cierre cortés",
     body:
       "Gracias por avisarme, {{nombre}}. Entiendo perfectamente. Dejo tu contacto anotado por si más adelante retomas {{producto}}. ¡Mucho éxito en tus proyectos!",
@@ -138,85 +139,57 @@ export type ObjectionPlaybookItem = {
   unlockQuestion: string;
   callResponse: string;
   whatsappResponse: string;
-  avoidSaying: string;
+  avoidSaying?: string;
 };
 
-export const CAMPUSLANDS_OBJECTIONS: ObjectionPlaybookItem[] = [
+export const OBJECTION_PLAYBOOK: ObjectionPlaybookItem[] = [
   {
-    id: "caro",
-    objection: "«Está caro» / «Se sale de mi presupuesto»",
+    id: "obj-precio",
+    objection: "Está muy caro / no tengo ese presupuesto ahora",
     type: "Precio",
-    behindIt: "No ve aún el retorno práctico o necesita dividir el pago.",
-    unlockQuestion: "¿Con qué opción lo estás comparando o qué monto mensual sí te resultaría cómodo?",
+    behindIt: "No compara con el costo de no aprender o no vio opciones de cuotas/retorno.",
+    unlockQuestion: "¿Es un tema de presupuesto total o te ayudaría pagarlo en 2 o 3 cuotas mensuales sin recargo?",
     callResponse:
-      "Te entiendo. La diferencia aquí es que no ves teoría grabada sino que sales con un proyecto funcionando y acompañamiento en vivo. Si el tema es el desembolso de un solo pago, podemos revisar opción de cuotas o tarifa grupal.",
+      "Te entiendo perfectamente. Más que un gasto, en Campuslands lo diseñamos para que en pocas semanas estés aplicando herramientas reales o capacitándote para un empleo. Además tenemos opción de pagar en cuotas. ¿Te quedaría más cómodo así?",
     whatsappResponse:
-      "Entiendo, {{nombre}}. Para ver si te funciona mejor: ¿te complica el monto total de contado o prefieres que veamos una opción en cuotas para {{producto}}?",
-    avoidSaying: "«Es el mejor precio del mercado» o inventar descuentos falsos.",
+      "Te entiendo perfectamente. Para no comprometer tu presupuesto, tenemos opción de cuotas mensuales. Si gustas te calculo la cuota para que veas si te funciona.",
+    avoidSaying: "No digas 'es barato comparado con la universidad'; ofrece facilidades y valor concreto.",
   },
   {
-    id: "pensar",
-    objection: "«Lo voy a pensar»",
-    type: "Confianza",
-    behindIt: "Hay una duda no dicha sobre el temario, nivel requerido o retorno.",
-    unlockQuestion: "¿Qué parte específica te gustaría revisar con más calma: el temario, el horario o la inversión?",
-    callResponse:
-      "Claro, es una decisión importante. Para no dejarte con dudas, ¿qué punto específico quieres validar antes de decidir? Así te envío justo esa información.",
-    whatsappResponse:
-      "Con gusto, {{nombre}}. ¿Qué parte te gustaría revisar con más calma de {{producto}} (temario, horario o forma de pago)? Así te mando justo ese dato.",
-    avoidSaying: "Presionar con «último cupo hoy» si no es real.",
-  },
-  {
-    id: "tiempo",
-    objection: "«No tengo tiempo / no me cuadra el horario»",
+    id: "obj-tiempo",
+    objection: "No tengo tiempo / los horarios se me complican",
     type: "Tiempo",
-    behindIt: "Teme inscribirse y quedarse atrás por su carga laboral.",
-    unlockQuestion: "¿Qué días u horarios sí tienes libres a la semana para dedicarle 2 o 3 horas?",
+    behindIt: "Miedo a no cumplir por trabajo o familia.",
+    unlockQuestion: "¿Cuántas horas a la semana tienes libres realmente?",
     callResponse:
-      "Es súper válido. Las sesiones quedan grabadas para repaso y trabajamos sobre casos de tu propio trabajo, así que el tiempo que inviertes te ahorra horas desde la semana uno.",
+      "Entiendo tu horario. Todo el contenido y las sesiones quedan grabadas en nuestra plataforma web para que avances a tu ritmo si un día no te puedes conectar.",
     whatsappResponse:
-      "Te entiendo, {{nombre}}. ¿Qué horario te queda mejor entre semana o sábado? Además las sesiones quedan grabadas para que no pierdas el hilo si un día te atrasas.",
-    avoidSaying: "Minimizar su falta de tiempo.",
+      "Totalmente comprensible. Justo por eso las clases quedan grabadas en la plataforma con acceso 24/7 y diploma al finalizar. Así avanzas a tu tiempo sin perderte nada.",
+    avoidSaying: "No digas 'si quieres puedes hacerte el tiempo'; valida su esfuerzo y destaca la flexibilidad de la plataforma.",
   },
   {
-    id: "gratis",
-    objection: "«Ya hay cursos gratis en YouTube»",
-    type: "Competencia",
-    behindIt: "No percibe la diferencia entre ver videos sueltos y tener mentoría guiada.",
-    unlockQuestion: "¿Has intentado implementarlo con videos y qué fue lo que más te frenó?",
+    id: "obj-nivel",
+    objection: "No sé de programación / no sé si voy a entender",
+    type: "Confianza",
+    behindIt: "Inseguridad de quedarse atrás frente a personas más técnicas.",
+    unlockQuestion: "¿Has usado antes herramientas como ChatGPT o Excel en tu trabajo?",
     callResponse:
-      "Totalmente, hay mucho contenido gratis. Lo que pagas aquí no es el video, es la ruta ordenada, resolver tus bloqueos en vivo en minutos y salir con algo implementado sin perder semanas probando.",
+      "Nuestros programas van desde cero paso a paso, con mentores que te guían sin tecnicismos raros. Nadie se queda atrás.",
     whatsappResponse:
-      "Es cierto que hay buen material gratis, {{nombre}}. La diferencia en {{producto}} es que vas con guía paso a paso y resuelves tus dudas en vivo sobre tu caso real, sin perder semanas probando solo.",
-    avoidSaying: "Hablar mal de otros cursos o creadores.",
-  },
-  {
-    id: "grupo",
-    objection: "«Somos varias personas / empresa, ¿hay descuento?»",
-    type: "Autoridad",
-    behindIt: "Compra grupal B2B; necesita propuesta formal para aprobación.",
-    unlockQuestion: "¿Cuántas personas serían y necesitan factura a nombre de la empresa?",
-    callResponse:
-      "Sí manejamos tarifa corporativa a partir de 3 participantes. Si me confirmas cuántas personas son, te armo hoy mismo la cotización formal con IVA incluido para que la puedas presentar.",
-    whatsappResponse:
-      "¡Excelente, {{nombre}}! A partir de 3 personas sí aplicamos tarifa grupal. ¿Cuántos participantes serían y a nombre de qué empresa emitimos la cotización?",
-    avoidSaying: "Dar porcentajes de descuento sin confirmar número de cupos.",
+      "No te preocupes por el nivel técnico: empezamos 100% desde cero con explicaciones claras y ejemplos prácticos. Cualquier duda la resolvemos paso a paso.",
+    avoidSaying: "No minimices su miedo diciendo 'cualquiera puede'; dale seguridad con el acompañamiento personalizado.",
   },
 ];
 
-export function formatSalesTemplate(template: string, lead?: Lead | null): string {
-  if (!lead) {
-    return template
-      .replaceAll("{{nombre}}", "[Nombre]")
-      .replaceAll("{{producto}}", "[Programa]")
-      .replaceAll("{{precio}}", "Q[Precio]");
-  }
-  const firstName = lead.full_name.trim().split(/\s+/)[0] || "hola";
-  const program = lead.product.trim() || "nuestros programas";
-  const amount = lead.deal_amount > 0 ? money(lead.deal_amount) : "inversión accesible";
+export function interpolateWhatsAppTemplate(template: string, lead?: Lead | null): string {
+  if (!lead) return template;
+  const name = lead.full_name.trim().split(/\s+/)[0] || "Hola";
+  const product = lead.product || "nuestros programas";
+  const amount = money(lead.deal_amount);
+
   return template
-    .replaceAll("{{nombre}}", firstName)
-    .replaceAll("{{producto}}", program)
+    .replaceAll("{{nombre}}", name)
+    .replaceAll("{{producto}}", product)
     .replaceAll("{{precio}}", amount);
 }
 
@@ -297,28 +270,17 @@ export function buildCallScript(lead?: Lead | null): {
   closing: string;
 } {
   const name = lead?.full_name.trim().split(/\s+/)[0] || "[Nombre]";
-  const program = lead?.product.trim() || "[Programa de IA Academy]";
-  const amount = lead?.deal_amount ? money(lead.deal_amount) : "la inversión del programa";
-  const stage = lead?.stage || "nuevo";
-
-  const objective =
-    stage === "visita"
-      ? "Confirmar asistencia a sesión demo y resolver últimas dudas para inscripción."
-      : stage === "interesado"
-        ? "Validar horario, forma de pago y cerrar fecha de inscripción."
-        : "Identificar necesidad real, nivel actual y agendar siguiente paso concreto.";
+  const program = lead?.product.trim() || "[Programa]";
 
   return {
-    objective,
-    opening: `«Hola ${name}, te saluda [Tu nombre] de Campuslands Guatemala. Te llamo brevemente por tu consulta sobre ${program}. ¿Tienes 3 minutos?»`,
+    objective: "Calificar interés, resolver dudas y acordar siguiente paso (visita, cotización o pago).",
+    opening: `Hola ${name}, te saluda el equipo de admisiones de Campuslands. Veo tu interés en ${program}. ¿Tienes 3 minutos para revisar si este grupo es el ideal para ti?`,
     questions: [
-      `¿Qué te motivó a buscar ${program} en este momento?`,
-      "¿Lo quieres aplicar en tu trabajo actual, en un negocio propio o para cambiar de rol?",
-      "¿Has usado antes herramientas de IA o programación, o partes desde cero?",
-      "¿Qué horario te funciona mejor para sesiones en vivo?",
-      `La inversión de ${program} es de ${amount}. ¿Prefieres pago único o revisamos plan en cuotas?`,
+      `¿Cuál es tu meta principal al tomar ${program}? (¿empleo tech, mejorar tu trabajo actual o emprender?)`,
+      `¿Qué horario te queda mejor: entre semana o fin de semana?`,
+      `¿Prefieres pago al contado o facilidad en cuotas mensuales?`,
     ],
-    closing: `«Perfecto, ${name}. Entonces quedamos en [acuerdo / envío de cotización / sesión] para el [día]. Te lo confirmo por WhatsApp ahora mismo.»`,
+    closing: `Excelente, ${name}. Te acabo de apartar el cupo provisionalmente. Te mando la cotización formal por WhatsApp con los datos de pago para que la revises hoy mismo.`,
   };
 }
 
@@ -335,57 +297,74 @@ export function getStageSalesGuide(lead: Lead): StageSalesGuide {
   const program = lead.product.trim() || "nuestros programas";
 
   const programPitch = isCodeUp
-    ? "Code-Up es nuestro intensivo de 10 meses donde combinas programación, inglés y habilidades adaptativas para dar un salto real en tu carrera"
-    : `${program} incluye sesiones prácticas y acceso a nuestra plataforma de talleres con videos, herramientas listas y diploma`;
+    ? "Code-Up es nuestro intensivo de 10 meses donde combinas programación, inglés y habilidades adaptativas para dar un salto profesional"
+    : `${program} incluye sesiones prácticas y acceso a nuestra plataforma de talleres con videos, herramientas y diploma`;
 
   switch (lead.stage) {
     case "nuevo":
       return {
-        title: "Fase 1 · Primer contacto rápido",
-        goal: "Responder en menos de 15 min, calificar interés y confirmar si busca Code-Up (10 meses) o taller de IA.",
-        nextStep: "Enviar WhatsApp inicial y agendar fecha de próximo contacto.",
+        title: "Fase 1 · Nuevo lead",
+        goal: "Responder en menos de 15 min, calificar interés y confirmar si busca Code-Up o taller de IA.",
+        nextStep: "Enviar WhatsApp inicial y agendar llamada o fecha de contacto.",
         getScript: () =>
-          `Hola ${firstName}, gusto en saludarte de Campuslands. Vi tu interés en ${program}. ${programPitch}. ¿Lo buscas para tu trabajo actual o para dar un cambio profesional?`,
+          `Hola ${firstName}, gusto en saludarte de Campuslands. Vi tu consulta sobre ${program}. ${programPitch}. ¿Te gustaría que te comparta el temario o coordinamos una llamada rápida?`,
+      };
+    case "en_conversacion":
+    case "contactado":
+      return {
+        title: "Fase 2 · En conversación bot/asesor",
+        goal: "Resolver dudas principales, presentar fechas y validar qué horario le conviene.",
+        nextStep: "Enviar detalles del programa y opciones de financiamiento o cuotas.",
+        getScript: () =>
+          `Hola ${firstName}, ¿cómo estás? Quería consultar si tuviste oportunidad de revisar la información de ${program}. ¿Prefieres que te llame en 5 minutos para resolver cualquier duda?`,
       };
     case "interesado":
       return {
-        title: "Fase 2 · Presentar valor y opciones",
-        goal: "Mostrar qué incluye el programa (plataforma/diploma o ruta de 10 meses) y proponer horario o visita.",
-        nextStep: "Enviar cotización o invitar a sesión informativa / visita.",
+        title: "Fase 3 · Interesado",
+        goal: "Mostrar qué incluye el programa, enviar cotización formal y pactar acuerdo.",
+        nextStep: "Enviar cotización en GTQ con facilidades de pago.",
         getScript: () =>
-          `Hola ${firstName}, te cuento rápido: ${programPitch}. ¿Te gustaría que te comparta el temario y opciones de pago/cuotas, o agendamos una llamada de 10 min?`,
+          `Hola ${firstName}, te comparto que ya tenemos abiertas las inscripciones para ${program}. ${programPitch}. ¿Te gustaría asegurar tu cupo esta semana?`,
       };
-    case "contactado":
-      return {
-        title: "Fase 3 · Seguimiento activo (destrabar dudas)",
-        goal: "Detectar qué le frena (precio, horario, nivel) y dar una respuesta honesta con siguiente paso.",
-        nextStep: "Preguntar qué necesita validar y fijar fecha límite suave.",
-        getScript: () =>
-          `Hola ${firstName}, paso a saludarte por tu consulta de ${program}. ¿Pudiste revisar los detalles o quedó alguna duda sobre horarios, plataforma o forma de pago?`,
-      };
+    case "ya_se_llamo":
     case "visita":
       return {
-        title: "Fase 4 · Cierre tras visita / demo",
-        goal: "Confirmar cupo, definir método de pago y registrar el primer abono o reserva.",
-        nextStep: "Enviar datos de pago o cotización formal y pasar a Inscrito al confirmar.",
+        title: "Fase 4 · Ya se llamó",
+        goal: "Dar seguimiento al acuerdo tras la llamada y enviar enlace o datos para formalizar.",
+        nextStep: "Enviar datos de pago / reserva o enlace de inscripción.",
         getScript: () =>
-          `Hola ${firstName}, qué gusto haber conversado contigo sobre ${program}. ¿Confirmamos tu cupo para iniciar con el grupo? Si gustas te paso los datos para transferencia o tarjeta.`,
+          `Hola ${firstName}, qué gusto haber conversado contigo sobre ${program}. Te comparto por aquí el resumen y los datos para formalizar tu participación.`,
       };
+    case "confirmado":
+      return {
+        title: "Fase 5 · Confirmado",
+        goal: "Validar gestión de pago (pagado, cuotas o cupo) y emisión de factura/NIT.",
+        nextStep: "Verificar comprobante y solicitar NIT para factura.",
+        getScript: () =>
+          `Hola ${firstName}, excelente noticia. Tu cupo en ${program} está apartado. Por favor compárteme tu NIT y nombre completo para la emisión de tu comprobante oficial.`,
+      };
+    case "inscrito_forms":
     case "inscrito":
       return {
-        title: "Fase 5 · Bienvenida y acceso a plataforma",
-        goal: "Asegurar acceso a plataforma de estudiantes/talleres y confirmar pagos pendientes.",
-        nextStep: "Verificar pago completo o programar recordatorio de cuota.",
+        title: "Fase 6 · Inscrito en forms",
+        goal: "Bienvenida oficial, confirmación de accesos a la plataforma y entrega de credenciales.",
+        nextStep: "Verificar acceso y entrega de bienvenida.",
         getScript: () =>
-          `¡Bienvenido/a a Campuslands, ${firstName}! Tu lugar en ${program} está confirmado. Cualquier duda con tu acceso a la plataforma de talleres y materiales me escribes por acá.`,
+          `¡Bienvenido/a oficial a Campuslands, ${firstName}! Tu registro en ${program} ha sido completado con éxito. Ya tienes acceso habilitado a la plataforma.`,
       };
+    case "no_interesado":
     case "perdido":
+    default:
       return {
-        title: "Recuperación de cliente perdido",
-        goal: "Retomar contacto sin presión cuando abre nueva cohorte o hay un taller más corto.",
-        nextStep: "Ofrecer alternativa (ej. taller corto en plataforma si no pudo Code-Up de 10 meses).",
+        title: "Fase 7 · No interesado",
+        goal: "Cierre cortés y mantener puerta abierta para futuras cohortes o talleres.",
+        nextStep: "Dejar registrado el motivo y agendar seguimiento a 60-90 días si aplica.",
         getScript: () =>
-          `Hola ${firstName}, te saluda el equipo de Campuslands. Estamos abriendo nuevo grupo y me acordé de ti. ¿Te gustaría que te avise fechas o prefieres ver un taller corto en nuestra plataforma?`,
+          `Gracias por tu tiempo, ${firstName}. Dejamos tus datos guardados para notificarte si abrimos nuevos horarios de ${program}. ¡Muchos éxitos en tus metas!`,
       };
   }
 }
+
+
+export const CAMPUSLANDS_OBJECTIONS = OBJECTION_PLAYBOOK;
+export const formatSalesTemplate = interpolateWhatsAppTemplate;

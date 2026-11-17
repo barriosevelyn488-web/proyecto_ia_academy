@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Lead, LeadActivity, Payment, Stage } from "@/lib/types";
 
 export const LEADS_SELECT =
-  "id,full_name,phone,email,origin,product,stage,interest,deal_amount,payment_method,next_contact_at,notes,source_key,created_at,updated_at";
+  "id,full_name,phone,email,origin,product,stage,interest,priority,agreement,payment_status,deal_amount,payment_method,next_contact_at,notes,source_key,nit,created_at,updated_at";
 export const PAYMENTS_SELECT =
   "id,lead_id,amount,method,status,due_date,paid_at,reference,created_at";
 export const ACTIVITIES_SELECT =
@@ -58,6 +58,10 @@ export async function fetchCloudSnapshot(
       ...row,
       deal_amount: Number(row.deal_amount || 0),
       next_contact_at: row.next_contact_at || "",
+      priority: row.priority || "SEGUIMIENTO",
+      agreement: row.agreement || "",
+      payment_status: row.payment_status || "",
+      nit: row.nit || "",
     })) as Lead[],
     hasMoreLeads,
     payments: (paymentRows ?? []).map((row) => ({
@@ -79,15 +83,19 @@ export async function persistCloudLead(
   const payload: Record<string, unknown> = {
     full_name: record.full_name,
     phone: record.phone,
-    email: record.email,
-    origin: record.origin,
-    product: record.product,
+    email: record.email || "",
+    origin: record.origin || "BOT",
+    product: record.product || "",
     stage: record.stage,
-    interest: record.interest,
-    deal_amount: record.deal_amount,
-    payment_method: record.payment_method,
+    interest: record.interest || "sin_clasificar",
+    priority: record.priority || "SEGUIMIENTO",
+    agreement: record.agreement || "",
+    payment_status: record.payment_status || "",
+    deal_amount: record.deal_amount || 0,
+    payment_method: record.payment_method || "",
     next_contact_at: record.next_contact_at || null,
-    notes: record.notes,
+    notes: record.notes || "",
+    nit: record.nit || "",
     source_key: record.source_key,
     updated_at: record.updated_at,
   };
@@ -103,6 +111,10 @@ export async function persistCloudLead(
     ...(data as Lead),
     deal_amount: Number((data as Lead).deal_amount || 0),
     next_contact_at: (data as Lead).next_contact_at || "",
+    priority: (data as Lead).priority || "SEGUIMIENTO",
+    agreement: (data as Lead).agreement || "",
+    payment_status: (data as Lead).payment_status || "",
+    nit: (data as Lead).nit || "",
   };
 
   if (existing && existing.stage !== saved.stage) {
@@ -114,6 +126,59 @@ export async function persistCloudLead(
   }
 
   return saved;
+}
+
+export async function batchUpsertLeads(
+  db: SupabaseClient,
+  leadsList: Partial<Lead>[],
+): Promise<{ inserted: number; updated: number; errors: number }> {
+  let inserted = 0;
+  let updated = 0;
+  let errors = 0;
+
+  for (const raw of leadsList) {
+    if (!raw.phone) {
+      errors++;
+      continue;
+    }
+    const payload = {
+      full_name: raw.full_name || "Sin nombre",
+      phone: raw.phone,
+      email: raw.email || "",
+      origin: raw.origin || "BOT",
+      product: raw.product || "CODE UP",
+      stage: raw.stage || "nuevo",
+      interest: raw.interest || "sin_clasificar",
+      priority: raw.priority || "SEGUIMIENTO",
+      agreement: raw.agreement || "",
+      payment_status: raw.payment_status || "",
+      deal_amount: Number(raw.deal_amount) || 0,
+      payment_method: raw.payment_method || "",
+      next_contact_at: raw.next_contact_at || null,
+      notes: raw.notes || "",
+      nit: raw.nit || "",
+      source_key: raw.source_key || `${raw.phone}:${raw.product || ""}`,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: existing } = await db
+      .from("leads")
+      .select("id")
+      .eq("source_key", payload.source_key)
+      .maybeSingle();
+
+    if (existing?.id) {
+      const { error } = await db.from("leads").update(payload).eq("id", existing.id);
+      if (error) errors++;
+      else updated++;
+    } else {
+      const { error } = await db.from("leads").insert(payload);
+      if (error) errors++;
+      else inserted++;
+    }
+  }
+
+  return { inserted, updated, errors };
 }
 
 export async function updateCloudLeadStage(
@@ -152,13 +217,12 @@ export async function insertCloudPayment(
     .single();
 
   if (error || !data) return null;
-
   return {
-    ...(data as Payment),
-    amount: Number((data as Payment).amount || 0),
-    due_date: (data as Payment).due_date || "",
-    paid_at: (data as Payment).paid_at || "",
-  };
+    ...data,
+    amount: Number(data.amount || 0),
+    due_date: data.due_date || "",
+    paid_at: data.paid_at || "",
+  } as Payment;
 }
 
 export async function insertCloudActivity(
@@ -167,7 +231,12 @@ export async function insertCloudActivity(
 ): Promise<LeadActivity | null> {
   const { data, error } = await db
     .from("lead_activities")
-    .insert(activity)
+    .insert({
+      lead_id: activity.lead_id,
+      activity_type: activity.activity_type,
+      description: activity.description,
+      metadata: activity.metadata,
+    })
     .select(ACTIVITIES_SELECT)
     .single();
 
@@ -180,13 +249,14 @@ export async function purgeCloudArchived(
   leadIds: string[],
   paymentIds: string[],
 ): Promise<boolean> {
+  let ok = true;
   if (leadIds.length > 0) {
     const { error } = await db.from("leads").delete().in("id", leadIds);
-    if (error) return false;
+    if (error) ok = false;
   }
   if (paymentIds.length > 0) {
     const { error } = await db.from("payments").delete().in("id", paymentIds);
-    if (error) return false;
+    if (error) ok = false;
   }
-  return true;
+  return ok;
 }

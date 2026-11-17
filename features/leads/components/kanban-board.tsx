@@ -3,25 +3,31 @@
 import { CalendarClock, GripVertical, MoreHorizontal } from "lucide-react";
 import { formatDate } from "@/lib/formatters";
 import { Lead, Stage, STAGES, money } from "@/lib/types";
+import { PriorityBadge } from "@/components/ui/crm-primitives";
 
 type KanbanBoardProps = {
   leads: Lead[];
   onMove: (lead: Lead, stage: Stage) => void;
   onOpen: (lead: Lead) => void;
+  focusedStage?: Stage | "todos";
 };
 
-export function KanbanBoard({ leads, onMove, onOpen }: KanbanBoardProps) {
+export function KanbanBoard({ leads, onMove, onOpen, focusedStage = "todos" }: KanbanBoardProps) {
+  const visibleStages = focusedStage === "todos"
+    ? STAGES
+    : STAGES.filter((s) => s.id === focusedStage);
+
   return (
     <>
       <div className="toolbar">
         <div className="kanban-hint">
-          <GripVertical size={14} /> Arrastra las tarjetas para cambiar la etapa del lead.
+          <GripVertical size={14} /> Arrastra las tarjetas entre columnas para avanzar de etapa.
         </div>
-        <span className="count-label">{leads.length} prospectos</span>
+        <span className="count-label">{leads.length} prospectos en el flujo</span>
       </div>
       <div className="kanban-scroll">
-        <div className="kanban">
-          {STAGES.map((stage) => {
+        <div className="kanban" style={{ gridTemplateColumns: `repeat(${visibleStages.length}, minmax(290px, 1fr))` }}>
+          {visibleStages.map((stage) => {
             const cards = leads.filter((lead) => lead.stage === stage.id);
             return (
               <div
@@ -56,8 +62,8 @@ export function KanbanBoard({ leads, onMove, onOpen }: KanbanBoardProps) {
                     <div className="card-title-row">
                       <div>
                         <div className="card-name">{lead.full_name || "Sin nombre"}</div>
-                        <div className="card-product">
-                          {lead.product || "Sin producto"}
+                        <div className="card-product" style={{ fontSize: "11px", color: "var(--muted)" }}>
+                          {lead.phone} · <strong style={{ color: "#2563eb" }}>{lead.product || "CODE UP"}</strong>
                         </div>
                       </div>
                       <button
@@ -71,20 +77,17 @@ export function KanbanBoard({ leads, onMove, onOpen }: KanbanBoardProps) {
                         <MoreHorizontal size={16} />
                       </button>
                     </div>
-                    <div className="card-tags">
-                      <span className="origin-chip">{lead.origin || "Sin origen"}</span>
-                      {lead.interest !== "sin_clasificar" && (
-                        <span
-                          className={`badge ${lead.interest === "alto" ? "green" : lead.interest === "medio" ? "amber" : "gray"}`}
-                        >
-                          {lead.interest === "alto"
-                            ? "Alto interés"
-                            : lead.interest === "medio"
-                              ? "Interés medio"
-                              : "Interés bajo"}
+
+                    <div className="card-tags" style={{ display: "flex", flexWrap: "wrap", gap: 4, margin: "6px 0" }}>
+                      <span className="origin-chip">{lead.origin || "BOT"}</span>
+                      {lead.priority && <PriorityBadge priority={lead.priority} />}
+                      {lead.agreement && (
+                        <span style={{ fontSize: "10px", padding: "1px 5px", borderRadius: 4, background: "#f3f4f6", color: "#374151", fontWeight: 600 }}>
+                          {lead.agreement}
                         </span>
                       )}
                     </div>
+
                     <div className="card-foot">
                       <span>
                         {lead.next_contact_at ? (
@@ -96,7 +99,7 @@ export function KanbanBoard({ leads, onMove, onOpen }: KanbanBoardProps) {
                             {formatDate(lead.next_contact_at)}
                           </>
                         ) : (
-                          "Sin tarea"
+                          lead.created_at ? lead.created_at.slice(0, 10) : "Sin fecha"
                         )}
                       </span>
                       <span className="card-value">{money(lead.deal_amount)}</span>
@@ -104,7 +107,7 @@ export function KanbanBoard({ leads, onMove, onOpen }: KanbanBoardProps) {
                   </article>
                 ))}
                 {cards.length === 0 && (
-                  <div className="kanban-empty">Suelta aquí los leads</div>
+                  <div className="kanban-empty">No hay prospectos en esta etapa</div>
                 )}
               </div>
             );

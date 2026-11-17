@@ -1,10 +1,17 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { Check, MessageCircle, Plus, Settings2, Sparkles, X } from "lucide-react";
 import { CAMPUSLANDS_PROGRAMS, getStageSalesGuide } from "@/lib/sales-playbook";
 import {
+  AGREEMENTS,
   Lead,
   LeadActivity,
   METHODS,
+  ORIGINS,
+  PAYMENT_STATUSES,
+  PRIORITIES,
+  PRODUCTS,
   Payment,
   PaymentMethod,
   Stage,
@@ -12,7 +19,13 @@ import {
   money,
 } from "@/lib/types";
 import { formatDate } from "@/lib/formatters";
-import { LeadAvatar } from "@/components/ui/crm-primitives";
+import {
+  AgreementBadge,
+  LeadAvatar,
+  PaymentStatusBadge,
+  PriorityBadge,
+  StageBadge,
+} from "@/components/ui/crm-primitives";
 
 export function LeadForm({
   lead,
@@ -26,6 +39,7 @@ export function LeadForm({
   const [draft, setDraft] = useState(lead);
   const patch = (key: keyof Lead, value: string | number) =>
     setDraft((current) => ({ ...current, [key]: value }));
+
   return (
     <div
       className="modal-backdrop"
@@ -35,6 +49,7 @@ export function LeadForm({
     >
       <form
         className="modal"
+        style={{ maxWidth: 640 }}
         onSubmit={(e) => {
           e.preventDefault();
           onSave(draft);
@@ -43,7 +58,7 @@ export function LeadForm({
         <div className="modal-head">
           <div>
             <div className="modal-title">Nuevo lead</div>
-            <div className="modal-sub">Agrega una oportunidad al embudo comercial.</div>
+            <div className="modal-sub">Agrega un nuevo prospecto al embudo comercial de Campuslands.</div>
           </div>
           <button type="button" className="icon-button" onClick={onClose}>
             <X size={15} />
@@ -59,7 +74,7 @@ export function LeadForm({
               Cancelar
             </button>
             <button className="button primary">
-              <Plus size={14} /> Crear lead
+              <Plus size={14} /> Guardar lead
             </button>
           </div>
         </div>
@@ -87,6 +102,7 @@ export function LeadFields({
           placeholder="Nombre del contacto"
         />
       </label>
+
       <label className="form-field">
         <span className="form-label">Teléfono / WhatsApp *</span>
         <input
@@ -98,6 +114,7 @@ export function LeadFields({
           placeholder="+502 0000 0000"
         />
       </label>
+
       <label className="form-field">
         <span className="form-label">Correo</span>
         <input
@@ -105,34 +122,42 @@ export function LeadFields({
           type="email"
           value={draft.email}
           onChange={(e) => patch("email", e.target.value)}
+          placeholder="correo@ejemplo.com"
         />
       </label>
+
       <label className="form-field">
-        <span className="form-label">Origen del lead</span>
-        <input
-          className="field"
+        <span className="form-label">Origen</span>
+        <select
+          className="select"
           value={draft.origin}
           onChange={(e) => patch("origin", e.target.value)}
-          placeholder="Bot, Instagram, referido…"
-        />
-      </label>
-      <label className="form-field">
-        <span className="form-label">Producto / programa</span>
-        <input
-          className="field"
-          list="campuslands-programs"
-          value={draft.product}
-          onChange={(e) => patch("product", e.target.value)}
-          placeholder="Taller de IA, Code-Up…"
-        />
-        <datalist id="campuslands-programs">
-          {CAMPUSLANDS_PROGRAMS.map((program) => (
-            <option key={program.id} value={program.name} />
+        >
+          {ORIGINS.map((orig) => (
+            <option key={orig} value={orig}>
+              {orig}
+            </option>
           ))}
-        </datalist>
+        </select>
       </label>
+
       <label className="form-field">
-        <span className="form-label">Etapa</span>
+        <span className="form-label">Producto / Programa</span>
+        <select
+          className="select"
+          value={draft.product || "CODE UP"}
+          onChange={(e) => patch("product", e.target.value)}
+        >
+          {PRODUCTS.map((prod) => (
+            <option key={prod} value={prod}>
+              {prod}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="form-field">
+        <span className="form-label">Estado (Flujo de Cierre)</span>
         <select
           className="select"
           value={draft.stage}
@@ -145,21 +170,66 @@ export function LeadFields({
           ))}
         </select>
       </label>
+
       <label className="form-field">
-        <span className="form-label">Interés</span>
+        <span className="form-label">Prioridad</span>
         <select
           className="select"
-          value={draft.interest}
-          onChange={(e) => patch("interest", e.target.value)}
+          value={draft.priority || "SEGUIMIENTO"}
+          onChange={(e) => patch("priority", e.target.value)}
         >
-          <option value="sin_clasificar">Sin clasificar</option>
-          <option value="alto">Alto</option>
-          <option value="medio">Medio</option>
-          <option value="bajo">Bajo</option>
+          {PRIORITIES.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.label}
+            </option>
+          ))}
         </select>
       </label>
+
       <label className="form-field">
-        <span className="form-label">Precio del trato (GTQ)</span>
+        <span className="form-label">Acuerdo</span>
+        <select
+          className="select"
+          value={draft.agreement || ""}
+          onChange={(e) => patch("agreement", e.target.value)}
+        >
+          <option value="">Por definir</option>
+          {AGREEMENTS.map((a) => (
+            <option key={a} value={a}>
+              {a}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="form-field">
+        <span className="form-label">Gestión de Pago</span>
+        <select
+          className="select"
+          value={draft.payment_status || ""}
+          onChange={(e) => patch("payment_status", e.target.value)}
+        >
+          <option value="">Por definir</option>
+          {PAYMENT_STATUSES.map((ps) => (
+            <option key={ps} value={ps}>
+              {ps}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="form-field">
+        <span className="form-label">NIT</span>
+        <input
+          className="field"
+          value={draft.nit || ""}
+          onChange={(e) => patch("nit", e.target.value)}
+          placeholder="C/F o número de NIT"
+        />
+      </label>
+
+      <label className="form-field">
+        <span className="form-label">Monto del trato (GTQ)</span>
         <input
           className="field"
           type="number"
@@ -170,8 +240,9 @@ export function LeadFields({
           placeholder="0.00"
         />
       </label>
+
       <label className="form-field">
-        <span className="form-label">Método de pago esperado</span>
+        <span className="form-label">Método de pago</span>
         <select
           className="select"
           value={draft.payment_method}
@@ -183,6 +254,7 @@ export function LeadFields({
           ))}
         </select>
       </label>
+
       <label className="form-field">
         <span className="form-label">Próximo contacto</span>
         <input
@@ -192,13 +264,14 @@ export function LeadFields({
           onChange={(e) => patch("next_contact_at", e.target.value)}
         />
       </label>
+
       <label className="form-field full">
-        <span className="form-label">Notas de seguimiento</span>
+        <span className="form-label">Observaciones / Comentario</span>
         <textarea
           className="textarea"
           value={draft.notes}
           onChange={(e) => patch("notes", e.target.value)}
-          placeholder="Interés, acuerdos, preguntas, siguiente paso…"
+          placeholder="Interés, acuerdos, preguntas, seguimiento…"
         />
       </label>
     </div>
@@ -235,16 +308,21 @@ export function LeadDetail({
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [quickNote, setQuickNote] = useState("");
   const [noteBusy, setNoteBusy] = useState(false);
+
   useEffect(() => {
     setDraft(lead);
   }, [lead]);
+
   const patch = (key: keyof Lead, value: string | number) =>
     setDraft((current) => ({ ...current, [key]: value }));
+
   const received = payments
     .filter((payment) => payment.status === "pagado")
     .reduce((sum, payment) => sum + Number(payment.amount), 0);
+
   const stageGuide = getStageSalesGuide(lead);
   const stageScript = stageGuide.getScript(lead);
+
   return (
     <div
       className="modal-backdrop"
@@ -252,16 +330,19 @@ export function LeadDetail({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <section className="modal wide">
+      <section className="modal wide" style={{ maxWidth: 840 }}>
         <div className="modal-head">
           <div>
-            <div className="eyebrow">Ficha del prospecto</div>
+            <div className="eyebrow">Ficha de Admisión</div>
             <div className="detail-header">
               <LeadAvatar name={lead.full_name} />
               <div>
-                <div className="detail-name">{lead.full_name}</div>
+                <div className="detail-name" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {lead.full_name}
+                  {lead.priority && <PriorityBadge priority={lead.priority} />}
+                </div>
                 <div className="detail-phone">
-                  {lead.phone} {lead.email && `· ${lead.email}`}
+                  <strong>{lead.phone}</strong> {lead.email && `· ${lead.email}`} · {lead.origin || "BOT"}
                 </div>
               </div>
               <div className="detail-actions">
@@ -287,14 +368,32 @@ export function LeadDetail({
             <X size={15} />
           </button>
         </div>
+
         <div className="modal-body">
           {editing ? (
-            <LeadFields draft={draft} patch={patch} />
+            <div>
+              <LeadFields draft={draft} patch={patch} />
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+                <button type="button" className="button" onClick={() => setEditing(false)}>
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="button primary"
+                  onClick={() => {
+                    onSave(draft);
+                    setEditing(false);
+                  }}
+                >
+                  <Check size={14} /> Guardar cambios
+                </button>
+              </div>
+            </div>
           ) : (
             <>
               <div className="detail-grid">
                 <div className="detail-stat">
-                  <div className="detail-stat-label">Etapa</div>
+                  <div className="detail-stat-label">Estado (Flujo de Cierre)</div>
                   <div className="detail-stat-value">
                     <select
                       className="select stage-select"
@@ -309,64 +408,78 @@ export function LeadDetail({
                     </select>
                   </div>
                 </div>
+
                 <div className="detail-stat">
-                  <div className="detail-stat-label">Origen del lead</div>
-                  <div className="detail-stat-value">{lead.origin || "Sin origen"}</div>
-                </div>
-                <div className="detail-stat">
-                  <div className="detail-stat-label">Programa de interés</div>
-                  <div className="detail-stat-value">{lead.product || "Sin definir"}</div>
-                </div>
-                <div className="detail-stat">
-                  <div className="detail-stat-label">Interés</div>
-                  <div className="detail-stat-value">
-                    {lead.interest === "sin_clasificar"
-                      ? "Sin clasificar"
-                      : lead.interest}
+                  <div className="detail-stat-label">Programa</div>
+                  <div className="detail-stat-value" style={{ fontWeight: 600, color: "#2563eb" }}>
+                    {lead.product || "CODE UP"}
                   </div>
                 </div>
+
                 <div className="detail-stat">
-                  <div className="detail-stat-label">Precio del trato</div>
+                  <div className="detail-stat-label">Prioridad</div>
+                  <div className="detail-stat-value">
+                    <PriorityBadge priority={lead.priority} />
+                  </div>
+                </div>
+
+                <div className="detail-stat">
+                  <div className="detail-stat-label">Acuerdo</div>
+                  <div className="detail-stat-value">
+                    <AgreementBadge agreement={lead.agreement} />
+                  </div>
+                </div>
+
+                <div className="detail-stat">
+                  <div className="detail-stat-label">Gestión de Pago</div>
+                  <div className="detail-stat-value">
+                    <PaymentStatusBadge status={lead.payment_status} />
+                  </div>
+                </div>
+
+                <div className="detail-stat">
+                  <div className="detail-stat-label">NIT</div>
+                  <div className="detail-stat-value">{lead.nit || "C/F"}</div>
+                </div>
+
+                <div className="detail-stat">
+                  <div className="detail-stat-label">Monto del trato</div>
                   <div className="detail-stat-value">{money(lead.deal_amount)}</div>
                 </div>
+
                 <div className="detail-stat">
-                  <div className="detail-stat-label">Método de pago esperado</div>
-                  <div className="detail-stat-value">
-                    {lead.payment_method || "Por definir"}
+                  <div className="detail-stat-label">Ingresos cobrados</div>
+                  <div className="detail-stat-value" style={{ color: "#16a34a" }}>
+                    {money(received)}
                   </div>
                 </div>
+
                 <div className="detail-stat">
                   <div className="detail-stat-label">Próximo contacto</div>
                   <div className="detail-stat-value">
                     {formatDate(lead.next_contact_at)}
                   </div>
                 </div>
-                <div className="detail-stat">
-                  <div className="detail-stat-label">Ingresos recibidos</div>
-                  <div className="detail-stat-value">{money(received)}</div>
-                </div>
-                <div className="detail-stat">
-                  <div className="detail-stat-label">Fecha de entrada</div>
-                  <div className="detail-stat-value">{formatDate(lead.created_at)}</div>
-                </div>
               </div>
-              <div className="section-label">Guía rápida para esta fase</div>
+
+              {/* Guía rápida para la fase */}
+              <div className="section-label" style={{ marginTop: 16 }}>Guía rápida de conversación</div>
               <div
                 style={{
                   border: "1px solid var(--border)",
                   borderRadius: 10,
-                  padding: 12,
+                  padding: 14,
                   background: "var(--bg)",
                   display: "grid",
-                  gap: 6,
-                  fontSize: 12,
+                  gap: 8,
+                  fontSize: 13,
                 }}
               >
                 <div style={{ fontWeight: 600, color: "var(--ink)" }}>{stageGuide.title}</div>
-                <div style={{ color: "var(--muted)" }}>
+                <div style={{ color: "var(--muted)", fontSize: 12 }}>
                   <strong>Objetivo:</strong> {stageGuide.goal}
                 </div>
-                <div style={{ color: "var(--muted)" }}>
+                <div style={{ color: "var(--muted)", fontSize: 12 }}>
                   <strong>Siguiente paso:</strong> {stageGuide.nextStep}
                 </div>
                 <div
@@ -374,11 +487,13 @@ export function LeadDetail({
                     background: "var(--surface)",
                     border: "1px solid var(--border)",
                     borderRadius: 8,
-                    padding: 8,
+                    padding: 10,
                     lineHeight: 1.45,
+                    fontSize: 12,
+                    fontStyle: "italic",
                   }}
                 >
-                  {stageScript}
+                  &ldquo;{stageScript}&rdquo;
                 </div>
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                   <button
@@ -386,219 +501,57 @@ export function LeadDetail({
                     className="button small primary"
                     onClick={() => onWhatsApp(stageScript)}
                   >
-                    <MessageCircle size={12} /> Enviar guion por WhatsApp
+                    <MessageCircle size={12} /> Enviar este guion por WhatsApp
                   </button>
                 </div>
               </div>
-              <div className="section-label">Notas de seguimiento</div>
-              <div className="note-card">
-                {lead.notes ||
-                  "Todavía no hay notas. Edita la ficha para agregar información importante."}
+
+              {/* Notas de seguimiento */}
+              <div className="section-label" style={{ marginTop: 16 }}>Observaciones y Comentarios</div>
+              <div className="note-card" style={{ fontSize: 13 }}>
+                {lead.notes || "Sin observaciones registradas."}
               </div>
-              <div className="section-label">Actividad reciente</div>
+
+              {/* Bitácora rápida */}
               {onLogNote && (
-                <form
-                  style={{ display: "flex", gap: 8, marginBottom: 8 }}
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    if (!quickNote.trim()) return;
-                    setNoteBusy(true);
-                    const ok = await onLogNote(quickNote.trim());
-                    setNoteBusy(false);
-                    if (ok) {
-                      setQuickNote("");
-                      tell("Seguimiento registrado en la bitácora.");
-                    }
-                  }}
-                >
-                  <input
-                    className="field"
-                    placeholder="Registrar llamada, respuesta o acuerdo rápido…"
-                    value={quickNote}
-                    onChange={(e) => setQuickNote(e.target.value)}
-                  />
-                  <button className="button small" disabled={noteBusy || !quickNote.trim()}>
-                    <Plus size={12} /> Registrar
-                  </button>
-                </form>
+                <div style={{ marginTop: 16 }}>
+                  <div className="section-label">Registrar llamada o acuerdo</div>
+                  <form
+                    style={{ display: "flex", gap: 8, marginBottom: 8 }}
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      if (!quickNote.trim()) return;
+                      setNoteBusy(true);
+                      const ok = await onLogNote(quickNote.trim());
+                      setNoteBusy(false);
+                      if (ok) {
+                        setQuickNote("");
+                        tell("Seguimiento registrado en la bitácora.");
+                      }
+                    }}
+                  >
+                    <input
+                      className="field"
+                      placeholder="Ej: Se llamó a las 3pm, pide facilidades de pago en 2 cuotas…"
+                      value={quickNote}
+                      onChange={(e) => setQuickNote(e.target.value)}
+                    />
+                    <button className="button small" disabled={noteBusy || !quickNote.trim()}>
+                      {noteBusy ? "Guardando…" : "Registrar"}
+                    </button>
+                  </form>
+                </div>
               )}
-              <div className="payment-list">
-                {activities.slice(0, 8).map((activity) => (
-                  <div className="payment-row" key={activity.id}>
-                    <span>{activity.description}</span>
-                    <time dateTime={activity.created_at}>
-                      {new Date(activity.created_at).toLocaleString("es-GT", {
-                        dateStyle: "short",
-                        timeStyle: "short",
-                      })}
-                    </time>
-                  </div>
-                ))}
-                {!activities.length && (
-                  <div className="empty-state">Todavía no hay actividad registrada.</div>
-                )}
-              </div>
-              <div className="section-label section-split">
-                <span>Pagos registrados</span>
-                <button
-                  className="button small"
-                  onClick={() => setPaymentOpen(!paymentOpen)}
-                >
-                  <Plus size={12} /> Añadir pago
-                </button>
-              </div>
-              {paymentOpen && (
-                <QuickPayment
-                  lead={lead}
-                  onCancel={() => setPaymentOpen(false)}
-                  onSave={async (payload) => {
-                    await onAddPayment(payload);
-                    setPaymentOpen(false);
-                  }}
-                />
-              )}
-              <div className="payment-list">
-                {payments.map((payment) => (
-                  <div className="payment-row" key={payment.id}>
-                    <span>
-                      {payment.reference || "Pago"} · {payment.method}
-                    </span>
-                    <span
-                      className={`badge ${payment.status === "pagado" ? "green" : "amber"}`}
-                    >
-                      {payment.status === "pagado" ? "Pagado" : "Pendiente"}
-                    </span>
-                    <strong>{money(payment.amount)}</strong>
-                  </div>
-                ))}
-                {!payments.length && !paymentOpen && (
-                  <div className="empty-state">No hay pagos vinculados todavía.</div>
-                )}
-              </div>
             </>
           )}
         </div>
-        {editing && (
-          <div className="modal-foot">
-            <span className="count-label">
-              La información del prospecto se actualizará.
-            </span>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button className="button" onClick={() => setEditing(false)}>
-                Cancelar
-              </button>
-              <button
-                className="button primary"
-                onClick={() => {
-                  onSave(draft);
-                  setEditing(false);
-                }}
-              >
-                <Check size={14} /> Guardar cambios
-              </button>
-            </div>
-          </div>
-        )}
+
+        <div className="modal-foot">
+          <button type="button" className="button" onClick={onClose}>
+            Cerrar ficha
+          </button>
+        </div>
       </section>
     </div>
-  );
-}
-
-export function QuickPayment({
-  lead,
-  onCancel,
-  onSave,
-}: {
-  lead: Lead;
-  onCancel: () => void;
-  onSave: (payment: Omit<Payment, "id" | "created_at">) => Promise<void>;
-}) {
-  const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState<PaymentMethod>(
-    (lead.payment_method as PaymentMethod) || "Transferencia",
-  );
-  const [status, setStatus] = useState<Payment["status"]>("pagado");
-  const [reference, setReference] = useState("");
-  const [due, setDue] = useState("");
-  return (
-    <form
-      className="quick-payment"
-      onSubmit={async (e) => {
-        e.preventDefault();
-        await onSave({
-          lead_id: lead.id,
-          amount: Number(amount),
-          method,
-          status,
-          due_date: status === "pendiente" ? due : "",
-          paid_at: status === "pagado" ? new Date().toISOString() : "",
-          reference,
-        });
-      }}
-    >
-      <label>
-        <span className="form-label">Monto</span>
-        <input
-          className="field"
-          required
-          type="number"
-          min="1"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="GTQ"
-        />
-      </label>
-      <label>
-        <span className="form-label">Método</span>
-        <select
-          className="select"
-          value={method}
-          onChange={(e) => setMethod(e.target.value as PaymentMethod)}
-        >
-          {METHODS.map((m) => (
-            <option key={m}>{m}</option>
-          ))}
-        </select>
-      </label>
-      <label>
-        <span className="form-label">Estado</span>
-        <select
-          className="select"
-          value={status}
-          onChange={(e) => setStatus(e.target.value as Payment["status"])}
-        >
-          <option value="pagado">Pagado</option>
-          <option value="pendiente">Pendiente</option>
-        </select>
-      </label>
-      <label>
-        <span className="form-label">Referencia</span>
-        <input
-          className="field"
-          value={reference}
-          onChange={(e) => setReference(e.target.value)}
-          placeholder="Concepto"
-        />
-      </label>
-      {status === "pendiente" && (
-        <label>
-          <span className="form-label">Vence</span>
-          <input
-            className="field"
-            type="date"
-            value={due}
-            onChange={(e) => setDue(e.target.value)}
-          />
-        </label>
-      )}
-      <div className="quick-payment-actions">
-        <button type="button" className="button small" onClick={onCancel}>
-          Cancelar
-        </button>
-        <button className="button primary small">
-          <Check size={12} /> Guardar
-        </button>
-      </div>
-    </form>
   );
 }

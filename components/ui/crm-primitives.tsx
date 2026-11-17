@@ -7,7 +7,7 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
-import { Lead, Stage, money, stageLabel } from "@/lib/types";
+import { Lead, PRIORITIES, STAGES, Stage, money, stageLabel } from "@/lib/types";
 import { initials } from "@/lib/formatters";
 
 export function AppBrand() {
@@ -123,19 +123,112 @@ export function LeadAvatar({ name }: { name: string }) {
 }
 
 export function StageBadge({ stage }: { stage: Stage }) {
-  const colorByStage: Record<Stage, string> = {
-    nuevo: "blue",
-    interesado: "purple",
-    contactado: "amber",
-    visita: "blue",
-    inscrito: "green",
-    perdido: "gray",
+  const current = STAGES.find((s) => s.id === stage) ?? {
+    color: "#6b7280",
+    bg: "#f3f4f6",
+    label: stageLabel(stage),
   };
 
   return (
-    <span className={`badge ${colorByStage[stage]}`}>
-      <i className="badge-dot" />
+    <span
+      className="badge"
+      style={{
+        color: current.color,
+        backgroundColor: current.bg,
+        borderColor: `${current.color}33`,
+        fontWeight: 600,
+        fontSize: "12px",
+      }}
+    >
+      <i className="badge-dot" style={{ backgroundColor: current.color }} />
       {stageLabel(stage)}
+    </span>
+  );
+}
+
+export function PriorityBadge({ priority }: { priority?: string }) {
+  if (!priority) return null;
+  const current = PRIORITIES.find((p) => p.id.toLowerCase() === priority.toLowerCase());
+  const color = current?.color ?? "#4b5563";
+  const bg = current?.bg ?? "#f3f4f6";
+
+  return (
+    <span
+      className="badge"
+      style={{
+        color,
+        backgroundColor: bg,
+        borderColor: `${color}33`,
+        fontWeight: 700,
+        fontSize: "11px",
+        textTransform: "uppercase",
+      }}
+    >
+      {priority}
+    </span>
+  );
+}
+
+export function AgreementBadge({ agreement }: { agreement?: string }) {
+  if (!agreement) return <span style={{ color: "var(--muted)" }}>—</span>;
+  const upper = agreement.toUpperCase();
+  const color = upper.includes("CONCRETADO")
+    ? "#16a34a"
+    : upper.includes("PROCESO")
+      ? "#ea580c"
+      : "#4b5563";
+  const bg = upper.includes("CONCRETADO")
+    ? "#dcfce7"
+    : upper.includes("PROCESO")
+      ? "#ffedd5"
+      : "#f3f4f6";
+
+  return (
+    <span
+      className="badge"
+      style={{
+        color,
+        backgroundColor: bg,
+        borderColor: `${color}33`,
+        fontWeight: 600,
+        fontSize: "11px",
+      }}
+    >
+      {agreement}
+    </span>
+  );
+}
+
+export function PaymentStatusBadge({ status }: { status?: string }) {
+  if (!status) return <span style={{ color: "var(--muted)" }}>—</span>;
+  const lower = status.toLowerCase();
+  const color = lower.includes("pagado")
+    ? "#16a34a"
+    : lower.includes("pendiente")
+      ? "#d97706"
+      : lower.includes("gratis")
+        ? "#9333ea"
+        : "#dc2626";
+  const bg = lower.includes("pagado")
+    ? "#dcfce7"
+    : lower.includes("pendiente")
+      ? "#fef3c7"
+      : lower.includes("gratis")
+        ? "#f3e8ff"
+        : "#fee2e2";
+
+  return (
+    <span
+      className="badge"
+      style={{
+        color,
+        backgroundColor: bg,
+        borderColor: `${color}33`,
+        fontWeight: 600,
+        fontSize: "11px",
+      }}
+    >
+      {status}
     </span>
   );
 }

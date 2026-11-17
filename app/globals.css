@@ -27,3 +27,71 @@
     break-inside: avoid;
   }
 }
+
+
+/* Selector de pestañas por etapa (Flujo de Cierre) */
+.stage-tabs-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 2px 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  scrollbar-width: thin;
+}
+.stage-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.stage-tab:hover {
+  background: #f8fafc;
+  color: var(--ink);
+  border-color: #cbd5e1;
+}
+.stage-tab.active {
+  background: white;
+  color: var(--ink);
+  border-color: #94a3b8;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.stage-tab-count {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #475569;
+}
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.tab-btn:hover {
+  color: var(--ink);
+}
+.tab-btn.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+}
